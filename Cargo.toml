@@ -1,6 +1,11 @@
 [package]
 name = "united-flarmnet"
 version = "0.1.0"
+description = "Merging FlarmNet, OGN and WeGlide live tracking data into a single FlarmNet file"
+authors = ["Tobias Bieniek <tobias.bieniek@gmail.com>"]
+license = "MIT/Apache-2.0"
+repository = "https://github.com/Turbo87/united-flarmnet.git"
+keywords = ["flarm", "flarmnet", "ogn", "glider", "gliding"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
