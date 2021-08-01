@@ -150,6 +150,11 @@ fn main() -> anyhow::Result<()> {
     let path = PathBuf::from("united.fln");
     fs::write(path, content)?;
 
+    info!("writing united-lx.fln…");
+    let lx_content = flarmnet::lx::encode_file(&merged_file)?;
+    let lx_path = PathBuf::from("united-lx.fln");
+    fs::write(lx_path, lx_content)?;
+
     Ok(())
 }
 
