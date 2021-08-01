@@ -2,7 +2,8 @@
 extern crate tracing;
 
 use anyhow::Context;
-use serde::Deserialize;
+use deunicode::deunicode;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -12,6 +13,7 @@ use tracing_subscriber::EnvFilter;
 
 static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 static OGN_DDB_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
+static WEGLIDE_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 fn main() -> anyhow::Result<()> {
     Subscriber::builder()
@@ -33,6 +35,15 @@ fn main() -> anyhow::Result<()> {
         .collect();
 
     debug!(ogn_count = ogn_ddb_records.len());
+
+    let weglide_users: HashMap<_, _> = get_weglide_users()?
+        .into_iter()
+        .map(|record| (record.device.as_ref().unwrap().id.to_lowercase(), record))
+        .collect();
+
+    debug!(weglide_count = weglide_users.len());
+
+    warn!(weglide = ?get_weglide_users()?.len());
 
     info!("merging datasets…");
     let mut merged: HashMap<_, _> = ogn_ddb_records
@@ -74,9 +85,60 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
+    for (id, user) in weglide_users {
+        let device = user.device.unwrap();
+
+        let existing_record = merged.get_mut(&id);
+        if let Some(existing_record) = existing_record {
+            if existing_record.call_sign == device.competition_id.unwrap_or_default() {
+                existing_record.pilot_name = deunicode(&user.name);
+
+                if existing_record.registration.is_empty() {
+                    existing_record.registration =
+                        device.name.map(|it| deunicode(&it)).unwrap_or_default();
+                }
+
+                if existing_record.airfield.is_empty()
+                    || existing_record.airfield == existing_record.registration
+                {
+                    existing_record.airfield = user
+                        .home_airport
+                        .map(|it| deunicode(&it.name))
+                        .unwrap_or_default();
+                }
+
+                if existing_record.plane_type.is_empty() {
+                    existing_record.plane_type = device
+                        .aircraft
+                        .map(|it| deunicode(&it.name))
+                        .unwrap_or_default();
+                }
+            }
+        } else {
+            merged.insert(
+                id,
+                flarmnet::Record {
+                    flarm_id: device.id,
+                    pilot_name: user.name,
+                    airfield: user.home_airport.map(|it| it.name).unwrap_or_default(),
+                    plane_type: device.aircraft.map(|it| it.name).unwrap_or_default(),
+                    registration: device.name.unwrap_or_default(),
+                    call_sign: device.competition_id.unwrap_or_default(),
+                    frequency: "".to_string(),
+                },
+            );
+        }
+    }
+
     info!("sorting result…");
     let mut merged: Vec<_> = merged.into_iter().map(|(_, record)| record).collect();
     merged.sort_unstable_by(|a, b| a.flarm_id.cmp(&b.flarm_id));
+
+    merged.iter_mut().for_each(|record| {
+        if record.airfield == record.registration {
+            record.airfield = "".to_string();
+        }
+    });
 
     let merged_file = flarmnet::File {
         version: 1,
@@ -204,4 +266,94 @@ fn download_ogn_ddb_data() -> anyhow::Result<String> {
     info!("downloading OGN DDB…");
     let response = ureq::get("http://ddb.glidernet.org/download/?j=1&t=1").call()?;
     Ok(response.into_string()?)
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct WeglideUser {
+    id: u32,
+    name: String,
+    home_airport: Option<WeglideAirport>,
+    device: Option<WeglideDevice>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct WeglideDevice {
+    id: String,
+    name: Option<String>,
+    competition_id: Option<String>,
+    aircraft: Option<WeglideAircraft>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct WeglideAircraft {
+    id: u32,
+    name: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct WeglideAirport {
+    id: u32,
+    name: String,
+}
+
+#[instrument]
+fn get_weglide_users() -> anyhow::Result<Vec<WeglideUser>> {
+    let cache_path = ensure_cache_folder()?;
+
+    let path = cache_path.join("weglide-users.json");
+    let needs_update = needs_update(&path, &WEGLIDE_CACHE_DURATION);
+    debug!(?path, needs_update);
+
+    if needs_update {
+        let all_users = download_all_weglide_users()?;
+        debug!(all_users = all_users.len());
+
+        let filtered_users: Vec<_> = all_users
+            .into_iter()
+            .filter(|it| it.device.is_some())
+            .collect();
+        debug!(filtered_users = filtered_users.len());
+
+        let content = serde_json::to_string_pretty(&filtered_users)?;
+        fs::write(&path, content)?;
+    }
+
+    info!("reading WeGlide user data…");
+    let content = fs::read_to_string(&path)?;
+    let users: Vec<WeglideUser> = serde_json::from_str(&content)?;
+    Ok(users)
+}
+
+#[instrument]
+fn download_all_weglide_users() -> anyhow::Result<Vec<WeglideUser>> {
+    info!("downloading WeGlide user data…");
+    let mut start = 1u32;
+    let limit = 100u32;
+    let mut all = Vec::new();
+    loop {
+        let ids: Vec<u32> = (start..start + limit).collect();
+
+        let page = download_weglide_users(&ids)?;
+        let page_len = page.len();
+        debug!(page_len);
+
+        all.extend(page);
+
+        if page_len == 0 {
+            return Ok(all);
+        }
+
+        start += limit;
+    }
+}
+
+#[instrument(skip(ids))]
+fn download_weglide_users(ids: &[u32]) -> anyhow::Result<Vec<WeglideUser>> {
+    let ids: Vec<_> = ids.iter().map(|id| id.to_string()).collect();
+    let ids = ids.join(",");
+
+    info!("downloading WeGlide user data page…");
+    let url = format!("https://api.weglide.org/v1/user?id_in={}&limit=100", ids);
+    let response = ureq::get(&url).call()?;
+    Ok(response.into_json()?)
 }
