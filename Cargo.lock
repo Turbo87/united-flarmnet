@@ -343,9 +343,9 @@ dependencies = [
 
 [[package]]
 name = "sharded-slab"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79c719719ee05df97490f80a45acfc99e5a30ce98a1e4fb67aee422745ae14e3"
+checksum = "ef79578eaf1846837727db975d587f15f6d8abd3900f4aa58e3fa6ae0fd9e4d1"
 dependencies = [
  "lazy_static",
 ]
