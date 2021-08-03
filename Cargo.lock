@@ -82,9 +82,9 @@ dependencies = [
 
 [[package]]
 name = "flarmnet"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d265e08d9cb148dd83731ddb38e8c360d317f251a17af2e1892f14b60cbf301"
+checksum = "0401f052fa35e12c69b9b511df06b7f1e623e270301d258082d8ca83f43f0562"
 dependencies = [
  "encoding_rs",
  "minidom",
