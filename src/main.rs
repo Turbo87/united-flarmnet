@@ -103,7 +103,7 @@ fn main() -> anyhow::Result<()> {
 
     info!("sorting result…");
     let mut merged: Vec<_> = merged.into_iter().map(|(_, record)| record).collect();
-    merged.sort_unstable_by(|a, b| a.flarm_id.cmp(&b.flarm_id));
+    merged.sort_unstable_by_key(|a| u32::from_str_radix(&a.flarm_id, 16).unwrap());
 
     merged.iter_mut().for_each(|record| {
         if record.airfield == record.registration {
