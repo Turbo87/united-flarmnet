@@ -23,14 +23,14 @@ struct DeviceDatabase {
 /// ```
 #[derive(Debug, Deserialize)]
 pub struct Device {
-    pub device_type: String,
+    // pub device_type: String,
     pub device_id: String,
     pub aircraft_model: String,
     pub registration: String,
     pub cn: String,
-    pub tracked: String,
-    pub identified: String,
-    pub aircraft_type: String,
+    // pub tracked: String,
+    // pub identified: String,
+    // pub aircraft_type: String,
 }
 
 impl Device {
