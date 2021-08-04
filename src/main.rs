@@ -21,7 +21,9 @@ fn main() -> anyhow::Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    let flarmnet_records: HashMap<_, _> = flarmnet::get_flarmnet_file()?
+    let flarmnet_file = flarmnet::get_flarmnet_file()?;
+    let flarmnet_records: HashMap<_, _> = flarmnet_file
+        .records
         .into_iter()
         .map(|record| (record.flarm_id.to_lowercase(), record))
         .collect();
