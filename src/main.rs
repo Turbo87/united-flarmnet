@@ -140,7 +140,7 @@ fn main() -> anyhow::Result<()> {
     });
 
     let merged_file = ::flarmnet::File {
-        version: 1,
+        version: flarmnet_file.version,
         records: merged,
     };
 
