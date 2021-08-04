@@ -20,7 +20,6 @@ static WEGLIDE_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 fn main() -> anyhow::Result<()> {
     Subscriber::builder()
         .pretty()
-        .without_time()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
