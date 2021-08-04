@@ -6,6 +6,8 @@ use deunicode::deunicode;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::fs::File;
+use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tracing_subscriber::fmt::Subscriber;
@@ -146,14 +148,16 @@ fn main() -> anyhow::Result<()> {
     };
 
     info!("writing united.fln…");
-    let content = flarmnet::encode_file(&merged_file)?;
     let path = PathBuf::from("united.fln");
-    fs::write(path, content)?;
+    let file = File::create(path)?;
+    let mut writer = flarmnet::xcsoar::Writer::new(BufWriter::new(file));
+    writer.write(&merged_file)?;
 
     info!("writing united-lx.fln…");
-    let lx_content = flarmnet::lx::encode_file(&merged_file)?;
     let lx_path = PathBuf::from("united-lx.fln");
-    fs::write(lx_path, lx_content)?;
+    let lx_file = File::create(lx_path)?;
+    let mut lx_writer = flarmnet::lx::Writer::new(BufWriter::new(lx_file));
+    lx_writer.write(&merged_file)?;
 
     Ok(())
 }
@@ -203,7 +207,7 @@ fn get_flarmnet_file() -> anyhow::Result<Vec<flarmnet::Record>> {
 
     info!("reading FlarmNet file…");
     let content = fs::read_to_string(&path)?;
-    let decoded_file = flarmnet::decode_file(&content)?;
+    let decoded_file = flarmnet::xcsoar::decode_file(&content)?;
     Ok(decoded_file
         .records
         .into_iter()
