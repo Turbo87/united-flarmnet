@@ -5,8 +5,8 @@ use std::time::Duration;
 static OGN_DDB_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 #[derive(Debug, Deserialize)]
-pub struct OgnDdb {
-    pub devices: Vec<OgnDdbDevice>,
+struct DeviceDatabase {
+    pub devices: Vec<Device>,
 }
 
 /// ```json
@@ -22,7 +22,7 @@ pub struct OgnDdb {
 /// }
 /// ```
 #[derive(Debug, Deserialize)]
-pub struct OgnDdbDevice {
+pub struct Device {
     pub device_type: String,
     pub device_id: String,
     pub aircraft_model: String,
@@ -33,7 +33,7 @@ pub struct OgnDdbDevice {
     pub aircraft_type: String,
 }
 
-impl OgnDdbDevice {
+impl Device {
     pub fn into_flarmnet_record(self) -> flarmnet::Record {
         flarmnet::Record {
             flarm_id: self.device_id,
@@ -48,7 +48,7 @@ impl OgnDdbDevice {
 }
 
 #[instrument]
-pub fn get_ddb() -> anyhow::Result<Vec<OgnDdbDevice>> {
+pub fn get_ddb() -> anyhow::Result<Vec<Device>> {
     let cache = Cache::new("ogn-ddb.json", OGN_DDB_CACHE_DURATION);
     if cache.needs_update() {
         let content = download_ogn_ddb_data()?;
@@ -57,7 +57,7 @@ pub fn get_ddb() -> anyhow::Result<Vec<OgnDdbDevice>> {
 
     info!("reading OGN DDB…");
     let content = cache.read()?;
-    let ogn_ddb: OgnDdb = serde_json::from_str(&content)?;
+    let ogn_ddb: DeviceDatabase = serde_json::from_str(&content)?;
     Ok(ogn_ddb.devices)
 }
 
