@@ -1,17 +1,20 @@
 #[macro_use]
 extern crate tracing;
 
-use anyhow::Context;
-use deunicode::deunicode;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
 use std::fs::File;
 use std::io::BufWriter;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::time::Duration;
+
+use deunicode::deunicode;
+use serde::{Deserialize, Serialize};
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
+
+use cache::Cache;
+
+mod cache;
 
 static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 static OGN_DDB_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
@@ -162,50 +165,15 @@ fn main() -> anyhow::Result<()> {
 }
 
 #[instrument]
-fn ensure_cache_folder() -> anyhow::Result<PathBuf> {
-    let path = PathBuf::from(".cache");
-    if !path.exists() {
-        info!("creating cache folder…");
-        fs::create_dir(&path).context("Failed to create cache folder")?;
-    }
-    Ok(path)
-}
-
-#[instrument]
-fn needs_update(path: &Path, cache_duration: &Duration) -> bool {
-    let metadata = match path.metadata() {
-        Ok(metadata) => metadata,
-        Err(_) => return true,
-    };
-
-    let modified = match metadata.modified() {
-        Ok(modified) => modified,
-        Err(_) => return true,
-    };
-
-    let elapsed = match modified.elapsed() {
-        Ok(elapsed) => elapsed,
-        Err(_) => return false,
-    };
-
-    elapsed > *cache_duration
-}
-
-#[instrument]
 fn get_flarmnet_file() -> anyhow::Result<Vec<flarmnet::Record>> {
-    let cache_path = ensure_cache_folder()?;
-
-    let path = cache_path.join("flarmnet.fln");
-    let needs_update = needs_update(&path, &FLARMNET_CACHE_DURATION);
-    debug!(?path, needs_update);
-
-    if needs_update {
+    let cache = Cache::new("flarmnet.fln", FLARMNET_CACHE_DURATION);
+    if cache.needs_update() {
         let content = download_flarmnet_file()?;
-        fs::write(&path, content)?;
+        cache.save(&content)?;
     }
 
     info!("reading FlarmNet file…");
-    let content = fs::read_to_string(&path)?;
+    let content = cache.read()?;
     let decoded_file = flarmnet::xcsoar::decode_file(&content)?;
     Ok(decoded_file
         .records
@@ -223,19 +191,14 @@ fn download_flarmnet_file() -> anyhow::Result<String> {
 
 #[instrument]
 fn get_ogn_ddb_data() -> anyhow::Result<Vec<OgnDdbDevice>> {
-    let cache_path = ensure_cache_folder()?;
-
-    let path = cache_path.join("ogn-ddb.json");
-    let needs_update = needs_update(&path, &OGN_DDB_CACHE_DURATION);
-    debug!(?path, needs_update);
-
-    if needs_update {
+    let cache = Cache::new("ogn-ddb.json", OGN_DDB_CACHE_DURATION);
+    if cache.needs_update() {
         let content = download_ogn_ddb_data()?;
-        fs::write(&path, content)?;
+        cache.save(&content)?;
     }
 
     info!("reading OGN DDB…");
-    let content = fs::read_to_string(&path)?;
+    let content = cache.read()?;
     let ogn_ddb: OgnDdb = serde_json::from_str(&content)?;
     Ok(ogn_ddb.devices)
 }
@@ -306,13 +269,8 @@ struct WeglideAirport {
 
 #[instrument]
 fn get_weglide_users() -> anyhow::Result<Vec<WeglideUser>> {
-    let cache_path = ensure_cache_folder()?;
-
-    let path = cache_path.join("weglide-users.json");
-    let needs_update = needs_update(&path, &WEGLIDE_CACHE_DURATION);
-    debug!(?path, needs_update);
-
-    if needs_update {
+    let cache = Cache::new("weglide-users.json", WEGLIDE_CACHE_DURATION);
+    if cache.needs_update() {
         let all_users = download_all_weglide_users()?;
         debug!(all_users = all_users.len());
 
@@ -323,11 +281,11 @@ fn get_weglide_users() -> anyhow::Result<Vec<WeglideUser>> {
         debug!(filtered_users = filtered_users.len());
 
         let content = serde_json::to_string_pretty(&filtered_users)?;
-        fs::write(&path, content)?;
+        cache.save(&content)?;
     }
 
     info!("reading WeGlide user data…");
-    let content = fs::read_to_string(&path)?;
+    let content = cache.read()?;
     let users: Vec<WeglideUser> = serde_json::from_str(&content)?;
     Ok(users)
 }
