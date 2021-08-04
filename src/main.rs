@@ -47,20 +47,7 @@ fn main() -> anyhow::Result<()> {
     info!("merging datasets…");
     let mut merged: HashMap<_, _> = ogn_ddb_records
         .into_iter()
-        .map(|(id, it)| {
-            (
-                id,
-                ::flarmnet::Record {
-                    flarm_id: it.device_id,
-                    pilot_name: "".to_string(),
-                    airfield: "".to_string(),
-                    plane_type: it.aircraft_model,
-                    registration: it.registration,
-                    call_sign: it.cn,
-                    frequency: "".to_string(),
-                },
-            )
-        })
+        .map(|(id, it)| (id, it.into_flarmnet_record()))
         .collect();
 
     for (id, record) in flarmnet_records {

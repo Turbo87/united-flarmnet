@@ -33,6 +33,20 @@ pub struct OgnDdbDevice {
     pub aircraft_type: String,
 }
 
+impl OgnDdbDevice {
+    pub fn into_flarmnet_record(self) -> flarmnet::Record {
+        flarmnet::Record {
+            flarm_id: self.device_id,
+            pilot_name: "".to_string(),
+            airfield: "".to_string(),
+            plane_type: self.aircraft_model,
+            registration: self.registration,
+            call_sign: self.cn,
+            frequency: "".to_string(),
+        }
+    }
+}
+
 #[instrument]
 pub fn get_ddb() -> anyhow::Result<Vec<OgnDdbDevice>> {
     let cache = Cache::new("ogn-ddb.json", OGN_DDB_CACHE_DURATION);
