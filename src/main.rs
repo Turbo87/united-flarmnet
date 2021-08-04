@@ -118,7 +118,7 @@ fn main() -> anyhow::Result<()> {
 
     let xcsoar_records = merged
         .iter()
-        .map(|record| sanitize_record_for_xcsoar(&record))
+        .map(|record| sanitize_record_for_xcsoar(record))
         .collect();
     let xcsoar_file = ::flarmnet::File {
         version: flarmnet_file.version,
@@ -133,7 +133,7 @@ fn main() -> anyhow::Result<()> {
 
     let lx_records = merged
         .iter()
-        .map(|record| sanitize_record_for_lx(&record))
+        .map(|record| sanitize_record_for_lx(record))
         .collect();
     let lx_file = ::flarmnet::File {
         version: flarmnet_file.version,
