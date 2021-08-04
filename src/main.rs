@@ -8,17 +8,17 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use deunicode::deunicode;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
 use cache::Cache;
 
 mod cache;
+mod weglide;
 
 static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 static OGN_DDB_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
-static WEGLIDE_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 fn main() -> anyhow::Result<()> {
     Subscriber::builder()
@@ -40,7 +40,7 @@ fn main() -> anyhow::Result<()> {
 
     debug!(ogn_count = ogn_ddb_records.len());
 
-    let weglide_users: HashMap<_, _> = get_weglide_users()?
+    let weglide_users: HashMap<_, _> = weglide::get_users()?
         .into_iter()
         .map(|record| (record.device.as_ref().unwrap().id.to_lowercase(), record))
         .collect();
@@ -235,89 +235,4 @@ fn download_ogn_ddb_data() -> anyhow::Result<String> {
     info!("downloading OGN DDB…");
     let response = ureq::get("http://ddb.glidernet.org/download/?j=1&t=1").call()?;
     Ok(response.into_string()?)
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct WeglideUser {
-    id: u32,
-    name: String,
-    home_airport: Option<WeglideAirport>,
-    device: Option<WeglideDevice>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct WeglideDevice {
-    id: String,
-    name: Option<String>,
-    competition_id: Option<String>,
-    aircraft: Option<WeglideAircraft>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct WeglideAircraft {
-    id: u32,
-    name: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct WeglideAirport {
-    id: u32,
-    name: String,
-}
-
-#[instrument]
-fn get_weglide_users() -> anyhow::Result<Vec<WeglideUser>> {
-    let cache = Cache::new("weglide-users.json", WEGLIDE_CACHE_DURATION);
-    if cache.needs_update() {
-        let all_users = download_all_weglide_users()?;
-        debug!(all_users = all_users.len());
-
-        let filtered_users: Vec<_> = all_users
-            .into_iter()
-            .filter(|it| it.device.is_some())
-            .collect();
-        debug!(filtered_users = filtered_users.len());
-
-        let content = serde_json::to_string_pretty(&filtered_users)?;
-        cache.save(&content)?;
-    }
-
-    info!("reading WeGlide user data…");
-    let content = cache.read()?;
-    let users: Vec<WeglideUser> = serde_json::from_str(&content)?;
-    Ok(users)
-}
-
-#[instrument]
-fn download_all_weglide_users() -> anyhow::Result<Vec<WeglideUser>> {
-    info!("downloading WeGlide user data…");
-    let mut start = 1u32;
-    let limit = 100u32;
-    let mut all = Vec::new();
-    loop {
-        let ids: Vec<u32> = (start..start + limit).collect();
-
-        let page = download_weglide_users(&ids)?;
-        let page_len = page.len();
-        debug!(page_len);
-
-        all.extend(page);
-
-        if page_len == 0 {
-            return Ok(all);
-        }
-
-        start += limit;
-    }
-}
-
-#[instrument(skip(ids))]
-fn download_weglide_users(ids: &[u32]) -> anyhow::Result<Vec<WeglideUser>> {
-    let ids: Vec<_> = ids.iter().map(|id| id.to_string()).collect();
-    let ids = ids.join(",");
-
-    info!("downloading WeGlide user data page…");
-    let url = format!("https://api.weglide.org/v1/user?id_in={}&limit=100", ids);
-    let response = ureq::get(&url).call()?;
-    Ok(response.into_json()?)
 }
