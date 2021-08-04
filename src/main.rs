@@ -6,13 +6,14 @@ use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
 
-use deunicode::deunicode;
+use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
 mod cache;
 mod flarmnet;
 mod ogn;
+mod sanitize;
 mod weglide;
 
 fn main() -> anyhow::Result<()> {
@@ -77,27 +78,22 @@ fn main() -> anyhow::Result<()> {
             let device = user.device.unwrap();
 
             if existing_record.call_sign == device.competition_id.unwrap_or_default() {
-                existing_record.pilot_name = deunicode(&user.name);
+                existing_record.pilot_name = user.name;
 
                 if existing_record.registration.is_empty() {
-                    existing_record.registration =
-                        device.name.map(|it| deunicode(&it)).unwrap_or_default();
+                    existing_record.registration = device.name.unwrap_or_default();
                 }
 
                 if existing_record.airfield.is_empty()
                     || existing_record.airfield == existing_record.registration
                 {
-                    existing_record.airfield = user
-                        .home_airport
-                        .map(|it| deunicode(&it.name))
-                        .unwrap_or_default();
+                    existing_record.airfield =
+                        user.home_airport.map(|it| it.name).unwrap_or_default();
                 }
 
                 if existing_record.plane_type.is_empty() {
-                    existing_record.plane_type = device
-                        .aircraft
-                        .map(|it| deunicode(&it.name))
-                        .unwrap_or_default();
+                    existing_record.plane_type =
+                        device.aircraft.map(|it| it.name).unwrap_or_default();
                 }
             }
         } else {
@@ -115,22 +111,35 @@ fn main() -> anyhow::Result<()> {
         }
     });
 
-    let merged_file = ::flarmnet::File {
-        version: flarmnet_file.version,
-        records: merged,
-    };
-
     info!("writing united.fln…");
     let path = PathBuf::from("united.fln");
     let file = File::create(path)?;
     let mut writer = ::flarmnet::xcsoar::Writer::new(BufWriter::new(file));
-    writer.write(&merged_file)?;
+
+    let xcsoar_records = merged
+        .iter()
+        .map(|record| sanitize_record_for_xcsoar(&record))
+        .collect();
+    let xcsoar_file = ::flarmnet::File {
+        version: flarmnet_file.version,
+        records: xcsoar_records,
+    };
+    writer.write(&xcsoar_file)?;
 
     info!("writing united-lx.fln…");
     let lx_path = PathBuf::from("united-lx.fln");
     let lx_file = File::create(lx_path)?;
     let mut lx_writer = ::flarmnet::lx::Writer::new(BufWriter::new(lx_file));
-    lx_writer.write(&merged_file)?;
+
+    let lx_records = merged
+        .iter()
+        .map(|record| sanitize_record_for_lx(&record))
+        .collect();
+    let lx_file = ::flarmnet::File {
+        version: flarmnet_file.version,
+        records: lx_records,
+    };
+    lx_writer.write(&lx_file)?;
 
     Ok(())
 }

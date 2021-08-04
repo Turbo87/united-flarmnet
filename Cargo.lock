@@ -522,6 +522,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "deunicode",
+ "encoding_rs",
  "flarmnet",
  "serde",
  "serde_json",
