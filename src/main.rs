@@ -8,17 +8,16 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use deunicode::deunicode;
-use serde::Deserialize;
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
 use cache::Cache;
 
 mod cache;
+mod ogn;
 mod weglide;
 
 static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
-static OGN_DDB_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 fn main() -> anyhow::Result<()> {
     Subscriber::builder()
@@ -33,7 +32,7 @@ fn main() -> anyhow::Result<()> {
 
     debug!(flarmnet_count = flarmnet_records.len());
 
-    let ogn_ddb_records: HashMap<_, _> = get_ogn_ddb_data()?
+    let ogn_ddb_records: HashMap<_, _> = ogn::get_ddb()?
         .into_iter()
         .map(|record| (record.device_id.to_lowercase(), record))
         .collect();
@@ -184,55 +183,5 @@ fn get_flarmnet_file() -> anyhow::Result<Vec<flarmnet::Record>> {
 fn download_flarmnet_file() -> anyhow::Result<String> {
     info!("downloading FlarmNet file…");
     let response = ureq::get("https://www.flarmnet.org/static/files/wfn/data.fln").call()?;
-    Ok(response.into_string()?)
-}
-
-#[instrument]
-fn get_ogn_ddb_data() -> anyhow::Result<Vec<OgnDdbDevice>> {
-    let cache = Cache::new("ogn-ddb.json", OGN_DDB_CACHE_DURATION);
-    if cache.needs_update() {
-        let content = download_ogn_ddb_data()?;
-        cache.save(&content)?;
-    }
-
-    info!("reading OGN DDB…");
-    let content = cache.read()?;
-    let ogn_ddb: OgnDdb = serde_json::from_str(&content)?;
-    Ok(ogn_ddb.devices)
-}
-
-#[derive(Debug, Deserialize)]
-struct OgnDdb {
-    devices: Vec<OgnDdbDevice>,
-}
-
-/// ```json
-/// {
-///     "device_type": "F",
-///     "device_id": "000000",
-///     "aircraft_model": "HPH 304CZ-17",
-///     "registration": "OK-7777",
-///     "cn": "KN",
-///     "tracked": "Y",
-///     "identified": "Y",
-///     "aircraft_type": "1"
-/// }
-/// ```
-#[derive(Debug, Deserialize)]
-struct OgnDdbDevice {
-    device_type: String,
-    device_id: String,
-    aircraft_model: String,
-    registration: String,
-    cn: String,
-    tracked: String,
-    identified: String,
-    aircraft_type: String,
-}
-
-#[instrument]
-fn download_ogn_ddb_data() -> anyhow::Result<String> {
-    info!("downloading OGN DDB…");
-    let response = ureq::get("http://ddb.glidernet.org/download/?j=1&t=1").call()?;
     Ok(response.into_string()?)
 }
