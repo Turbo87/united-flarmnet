@@ -12,6 +12,27 @@ pub struct User {
     pub device: Option<Device>,
 }
 
+impl User {
+    pub fn into_flarmnet_record(self) -> Option<flarmnet::Record> {
+        let Self {
+            device,
+            name,
+            home_airport,
+            ..
+        } = self;
+
+        device.map(|device| flarmnet::Record {
+            flarm_id: device.id,
+            pilot_name: name,
+            airfield: home_airport.map(|it| it.name).unwrap_or_default(),
+            plane_type: device.aircraft.map(|it| it.name).unwrap_or_default(),
+            registration: device.name.unwrap_or_default(),
+            call_sign: device.competition_id.unwrap_or_default(),
+            frequency: "".to_string(),
+        })
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Device {
     pub id: String,

@@ -85,10 +85,10 @@ fn main() -> anyhow::Result<()> {
     }
 
     for (id, user) in weglide_users {
-        let device = user.device.unwrap();
-
         let existing_record = merged.get_mut(&id);
         if let Some(existing_record) = existing_record {
+            let device = user.device.unwrap();
+
             if existing_record.call_sign == device.competition_id.unwrap_or_default() {
                 existing_record.pilot_name = deunicode(&user.name);
 
@@ -114,18 +114,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         } else {
-            merged.insert(
-                id,
-                ::flarmnet::Record {
-                    flarm_id: device.id,
-                    pilot_name: user.name,
-                    airfield: user.home_airport.map(|it| it.name).unwrap_or_default(),
-                    plane_type: device.aircraft.map(|it| it.name).unwrap_or_default(),
-                    registration: device.name.unwrap_or_default(),
-                    call_sign: device.competition_id.unwrap_or_default(),
-                    frequency: "".to_string(),
-                },
-            );
+            merged.insert(id, user.into_flarmnet_record().unwrap());
         }
     }
 
