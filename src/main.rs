@@ -5,19 +5,15 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
-use std::time::Duration;
 
 use deunicode::deunicode;
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
-use cache::Cache;
-
 mod cache;
+mod flarmnet;
 mod ogn;
 mod weglide;
-
-static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 fn main() -> anyhow::Result<()> {
     Subscriber::builder()
@@ -25,7 +21,7 @@ fn main() -> anyhow::Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    let flarmnet_records: HashMap<_, _> = get_flarmnet_file()?
+    let flarmnet_records: HashMap<_, _> = flarmnet::get_flarmnet_file()?
         .into_iter()
         .map(|record| (record.flarm_id.to_lowercase(), record))
         .collect();
@@ -52,7 +48,7 @@ fn main() -> anyhow::Result<()> {
         .map(|(id, it)| {
             (
                 id,
-                flarmnet::Record {
+                ::flarmnet::Record {
                     flarm_id: it.device_id,
                     pilot_name: "".to_string(),
                     airfield: "".to_string(),
@@ -118,7 +114,7 @@ fn main() -> anyhow::Result<()> {
         } else {
             merged.insert(
                 id,
-                flarmnet::Record {
+                ::flarmnet::Record {
                     flarm_id: device.id,
                     pilot_name: user.name,
                     airfield: user.home_airport.map(|it| it.name).unwrap_or_default(),
@@ -141,7 +137,7 @@ fn main() -> anyhow::Result<()> {
         }
     });
 
-    let merged_file = flarmnet::File {
+    let merged_file = ::flarmnet::File {
         version: 1,
         records: merged,
     };
@@ -149,39 +145,14 @@ fn main() -> anyhow::Result<()> {
     info!("writing united.fln…");
     let path = PathBuf::from("united.fln");
     let file = File::create(path)?;
-    let mut writer = flarmnet::xcsoar::Writer::new(BufWriter::new(file));
+    let mut writer = ::flarmnet::xcsoar::Writer::new(BufWriter::new(file));
     writer.write(&merged_file)?;
 
     info!("writing united-lx.fln…");
     let lx_path = PathBuf::from("united-lx.fln");
     let lx_file = File::create(lx_path)?;
-    let mut lx_writer = flarmnet::lx::Writer::new(BufWriter::new(lx_file));
+    let mut lx_writer = ::flarmnet::lx::Writer::new(BufWriter::new(lx_file));
     lx_writer.write(&merged_file)?;
 
     Ok(())
-}
-
-#[instrument]
-fn get_flarmnet_file() -> anyhow::Result<Vec<flarmnet::Record>> {
-    let cache = Cache::new("flarmnet.fln", FLARMNET_CACHE_DURATION);
-    if cache.needs_update() {
-        let content = download_flarmnet_file()?;
-        cache.save(&content)?;
-    }
-
-    info!("reading FlarmNet file…");
-    let content = cache.read()?;
-    let decoded_file = flarmnet::xcsoar::decode_file(&content)?;
-    Ok(decoded_file
-        .records
-        .into_iter()
-        .filter_map(|res| res.ok())
-        .collect())
-}
-
-#[instrument]
-fn download_flarmnet_file() -> anyhow::Result<String> {
-    info!("downloading FlarmNet file…");
-    let response = ureq::get("https://www.flarmnet.org/static/files/wfn/data.fln").call()?;
-    Ok(response.into_string()?)
 }
