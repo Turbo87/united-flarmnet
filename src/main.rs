@@ -146,7 +146,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     info!("writing united.fln…");
-    let content = flarmnet::encode_file(&merged_file)?;
+    let content = flarmnet::xcsoar::encode_file(&merged_file)?;
     let path = PathBuf::from("united.fln");
     fs::write(path, content)?;
 
@@ -203,7 +203,7 @@ fn get_flarmnet_file() -> anyhow::Result<Vec<flarmnet::Record>> {
 
     info!("reading FlarmNet file…");
     let content = fs::read_to_string(&path)?;
-    let decoded_file = flarmnet::decode_file(&content)?;
+    let decoded_file = flarmnet::xcsoar::decode_file(&content)?;
     Ok(decoded_file
         .records
         .into_iter()
