@@ -47,8 +47,6 @@ fn main() -> anyhow::Result<()> {
 
     debug!(weglide_count = weglide_users.len());
 
-    warn!(weglide = ?get_weglide_users()?.len());
-
     info!("merging datasets…");
     let mut merged: HashMap<_, _> = ogn_ddb_records
         .into_iter()
