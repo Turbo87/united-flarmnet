@@ -18,5 +18,5 @@ flarmnet = "0.4.0"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.67"
 tracing = "0.1.26"
-tracing-subscriber = "0.2.20"
+tracing-subscriber = "0.2.21"
 ureq = { version = "2.2.0", features = ["json"] }
