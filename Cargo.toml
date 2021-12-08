@@ -13,7 +13,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0.51"
 deunicode = "1.3.1"
-encoding_rs = "0.8.29"
+encoding_rs = "0.8.30"
 flarmnet = "0.4.0"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.72"
