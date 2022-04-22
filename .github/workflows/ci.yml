@@ -44,3 +44,26 @@ jobs:
       - run: rustup show
       - run: rustup component add clippy
       - run: cargo clippy --all -- --deny warnings --allow clippy::unknown-clippy-lints
+
+  docker:
+    name: DockerImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Login to Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: build and push
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          context: ./
+          file: ./Dockerfile
+          tags: ghcr.io/${{ github.actor }}/united-flarmnet:latest
+          secrets: |
+            GIT_AUTH_TOKEN=${{ github.token }}
