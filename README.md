@@ -20,6 +20,18 @@ After the program has finished downloading and processing the data,
 a `united.fln` file.
 
 
+Docker
+------------------------------------------------------------------------------
+To build a docker image with a function united-flarmnet binary, use the
+following commands:
+
+```
+docker build . -t united-flarmnet
+docker run --mount type=bind,source=${PWD},target=/data -t united-flarmnet
+```
+This will create a `united.fln` in the current directory.
+
+
 License
 ------------------------------------------------------------------------------
 
