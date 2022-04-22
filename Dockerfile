@@ -1,7 +1,6 @@
 FROM rust:bullseye as build
-WORKDIR /tmp/
-RUN git clone https://github.com/Turbo87/united-flarmnet.git && cd united-flarmnet
 WORKDIR /tmp/united-flarmnet
+COPY . .
 RUN cargo install --path . 
 
 FROM debian:bullseye-slim 
