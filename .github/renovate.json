@@ -6,7 +6,8 @@
         ":maintainLockFilesWeekly",
         ":prConcurrentLimitNone",
         ":prHourlyLimitNone",
-        ":semanticCommitsDisabled"
+        ":semanticCommitsDisabled",
+        "github>Turbo87/renovate-config//rust/updateToolchain"
     ],
     "packageRules": [
         {
