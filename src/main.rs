@@ -38,12 +38,12 @@ fn main() -> anyhow::Result<()> {
 
     debug!(ogn_count = ogn_ddb_records.len());
 
-    let weglide_users: HashMap<_, _> = weglide::get_users()?
+    let weglide_devices: HashMap<_, _> = weglide::get_devices()?
         .into_iter()
-        .map(|record| (record.device.as_ref().unwrap().id.to_lowercase(), record))
+        .map(|record| (record.id.to_lowercase(), record))
         .collect();
 
-    debug!(weglide_count = weglide_users.len());
+    debug!(weglide_count = weglide_devices.len());
 
     info!("merging datasets…");
     let mut merged: HashMap<_, _> = ogn_ddb_records
@@ -72,23 +72,14 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    for (id, user) in weglide_users {
+    for (id, device) in weglide_devices {
         let existing_record = merged.get_mut(&id);
         if let Some(existing_record) = existing_record {
-            let device = user.device.unwrap();
-
             if existing_record.call_sign == device.competition_id.unwrap_or_default() {
-                existing_record.pilot_name = user.name;
+                existing_record.pilot_name = device.user.name;
 
                 if existing_record.registration.is_empty() {
                     existing_record.registration = device.name.unwrap_or_default();
-                }
-
-                if existing_record.airfield.is_empty()
-                    || existing_record.airfield == existing_record.registration
-                {
-                    existing_record.airfield =
-                        user.home_airport.map(|it| it.name).unwrap_or_default();
                 }
 
                 if existing_record.plane_type.is_empty() {
@@ -97,7 +88,7 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         } else {
-            merged.insert(id, user.into_flarmnet_record().unwrap());
+            merged.insert(id, device.into_flarmnet_record());
         }
     }
 
