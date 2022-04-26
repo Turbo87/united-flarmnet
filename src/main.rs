@@ -1,15 +1,15 @@
 #[macro_use]
 extern crate tracing;
 
+use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache};
 use reqwest_middleware::ClientBuilder;
+use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
-
-use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
@@ -25,8 +25,11 @@ async fn main() -> anyhow::Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(5);
+
     let client = ClientBuilder::new(reqwest::Client::new())
         .with(TracingMiddleware)
+        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .with(Cache(HttpCache {
             mode: CacheMode::Default,
             manager: CACacheManager::default(),
