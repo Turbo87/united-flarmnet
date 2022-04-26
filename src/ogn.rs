@@ -1,9 +1,5 @@
-use crate::cache::Cache;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::Deserialize;
-use std::time::Duration;
-
-static OGN_DDB_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 #[derive(Debug, Deserialize)]
 struct DeviceDatabase {
@@ -50,14 +46,7 @@ impl Device {
 
 #[instrument(skip(client))]
 pub async fn get_ddb(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
-    let cache = Cache::new("ogn-ddb.json", OGN_DDB_CACHE_DURATION);
-    if cache.needs_update() {
-        let content = download_ogn_ddb_data(client).await?;
-        cache.save(&content)?;
-    }
-
-    info!("reading OGN DDB…");
-    let content = cache.read()?;
+    let content = download_ogn_ddb_data(client).await?;
     let ogn_ddb: DeviceDatabase = serde_json::from_str(&content)?;
     Ok(ogn_ddb.devices)
 }

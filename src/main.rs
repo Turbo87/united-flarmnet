@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate tracing;
 
+use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache};
 use reqwest_middleware::ClientBuilder;
 use reqwest_tracing::TracingMiddleware;
 use std::collections::HashMap;
@@ -12,7 +13,6 @@ use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
-mod cache;
 mod flarmnet;
 mod ogn;
 mod sanitize;
@@ -27,6 +27,11 @@ async fn main() -> anyhow::Result<()> {
 
     let client = ClientBuilder::new(reqwest::Client::new())
         .with(TracingMiddleware)
+        .with(Cache(HttpCache {
+            mode: CacheMode::Default,
+            manager: CACacheManager::default(),
+            options: None,
+        }))
         .build();
 
     let flarmnet_file = flarmnet::get_flarmnet_file(&client).await?;
