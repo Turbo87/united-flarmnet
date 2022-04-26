@@ -1,11 +1,7 @@
-use crate::cache::Cache;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 use time::serde::rfc3339;
 use time::OffsetDateTime;
-
-static WEGLIDE_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Device {
@@ -52,22 +48,13 @@ impl Device {
 
 #[instrument(skip(client))]
 pub async fn get_devices(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
-    let cache = Cache::new("weglide-devices.json", WEGLIDE_CACHE_DURATION);
-    if cache.needs_update() {
-        let devices = download_devices(client).await?;
-        debug!(devices = devices.len());
+    let devices = download_devices(client).await?;
+    debug!(devices = devices.len());
 
-        let current_devices: Vec<_> = devices.into_iter().filter(|it| it.is_current()).collect();
-        debug!(current_devices = current_devices.len());
+    let current_devices: Vec<_> = devices.into_iter().filter(|it| it.is_current()).collect();
+    debug!(current_devices = current_devices.len());
 
-        let content = serde_json::to_string_pretty(&current_devices)?;
-        cache.save(&content)?;
-    }
-
-    info!("Reading WeGlide device data…");
-    let content = cache.read()?;
-    let devices: Vec<Device> = serde_json::from_str(&content)?;
-    Ok(devices)
+    Ok(current_devices)
 }
 
 #[instrument(skip(client))]
