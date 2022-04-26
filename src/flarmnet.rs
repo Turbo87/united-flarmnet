@@ -5,10 +5,10 @@ use std::time::Duration;
 static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
 #[instrument]
-pub fn get_flarmnet_file() -> anyhow::Result<flarmnet::File> {
+pub async fn get_flarmnet_file() -> anyhow::Result<flarmnet::File> {
     let cache = Cache::new("flarmnet.fln", FLARMNET_CACHE_DURATION);
     if cache.needs_update() {
-        let content = download_flarmnet_file()?;
+        let content = download_flarmnet_file().await?;
         cache.save(&content)?;
     }
 
@@ -19,10 +19,10 @@ pub fn get_flarmnet_file() -> anyhow::Result<flarmnet::File> {
 }
 
 #[instrument]
-fn download_flarmnet_file() -> anyhow::Result<String> {
+async fn download_flarmnet_file() -> anyhow::Result<String> {
     info!("downloading FlarmNet file…");
-    let response = reqwest::blocking::get("https://www.flarmnet.org/static/files/wfn/data.fln")?;
-    Ok(response.text()?)
+    let response = reqwest::get("https://www.flarmnet.org/static/files/wfn/data.fln").await?;
+    Ok(response.text().await?)
 }
 
 fn to_file(decoded: DecodedFile) -> flarmnet::File {

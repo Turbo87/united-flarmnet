@@ -48,10 +48,10 @@ impl Device {
 }
 
 #[instrument]
-pub fn get_ddb() -> anyhow::Result<Vec<Device>> {
+pub async fn get_ddb() -> anyhow::Result<Vec<Device>> {
     let cache = Cache::new("ogn-ddb.json", OGN_DDB_CACHE_DURATION);
     if cache.needs_update() {
-        let content = download_ogn_ddb_data()?;
+        let content = download_ogn_ddb_data().await?;
         cache.save(&content)?;
     }
 
@@ -62,8 +62,8 @@ pub fn get_ddb() -> anyhow::Result<Vec<Device>> {
 }
 
 #[instrument]
-fn download_ogn_ddb_data() -> anyhow::Result<String> {
+async fn download_ogn_ddb_data() -> anyhow::Result<String> {
     info!("downloading OGN DDB…");
-    let response = reqwest::blocking::get("http://ddb.glidernet.org/download/?j=1&t=1")?;
-    Ok(response.text()?)
+    let response = reqwest::get("http://ddb.glidernet.org/download/?j=1&t=1").await?;
+    Ok(response.text().await?)
 }

@@ -50,10 +50,10 @@ impl Device {
 }
 
 #[instrument]
-pub fn get_devices() -> anyhow::Result<Vec<Device>> {
+pub async fn get_devices() -> anyhow::Result<Vec<Device>> {
     let cache = Cache::new("weglide-devices.json", WEGLIDE_CACHE_DURATION);
     if cache.needs_update() {
-        let devices = download_devices()?;
+        let devices = download_devices().await?;
         debug!(devices = devices.len());
 
         let current_devices: Vec<_> = devices.into_iter().filter(|it| it.is_current()).collect();
@@ -70,8 +70,8 @@ pub fn get_devices() -> anyhow::Result<Vec<Device>> {
 }
 
 #[instrument]
-fn download_devices() -> anyhow::Result<Vec<Device>> {
+async fn download_devices() -> anyhow::Result<Vec<Device>> {
     info!("Downloading WeGlide device data…");
-    let response = reqwest::blocking::get("https://api.weglide.org/v1/user/device")?;
-    Ok(response.json()?)
+    let response = reqwest::get("https://api.weglide.org/v1/user/device").await?;
+    Ok(response.json().await?)
 }
