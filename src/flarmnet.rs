@@ -21,8 +21,8 @@ pub fn get_flarmnet_file() -> anyhow::Result<flarmnet::File> {
 #[instrument]
 fn download_flarmnet_file() -> anyhow::Result<String> {
     info!("downloading FlarmNet file…");
-    let response = ureq::get("https://www.flarmnet.org/static/files/wfn/data.fln").call()?;
-    Ok(response.into_string()?)
+    let response = reqwest::blocking::get("https://www.flarmnet.org/static/files/wfn/data.fln")?;
+    Ok(response.text()?)
 }
 
 fn to_file(decoded: DecodedFile) -> flarmnet::File {

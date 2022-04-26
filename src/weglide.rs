@@ -72,6 +72,6 @@ pub fn get_devices() -> anyhow::Result<Vec<Device>> {
 #[instrument]
 fn download_devices() -> anyhow::Result<Vec<Device>> {
     info!("Downloading WeGlide device data…");
-    let response = ureq::get("https://api.weglide.org/v1/user/device").call()?;
-    Ok(response.into_json()?)
+    let response = reqwest::blocking::get("https://api.weglide.org/v1/user/device")?;
+    Ok(response.json()?)
 }
