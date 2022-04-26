@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
+use tokio::try_join;
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
@@ -37,7 +38,13 @@ async fn main() -> anyhow::Result<()> {
         }))
         .build();
 
-    let flarmnet_file = flarmnet::get_flarmnet_file(&client).await?;
+    let flarmnet_fut = flarmnet::get_flarmnet_file(&client);
+    let ogn_fut = ogn::get_ddb(&client);
+    let weglide_fut = weglide::get_devices(&client);
+
+    let (flarmnet_file, ogn_ddb_records, weglide_devices) =
+        try_join!(flarmnet_fut, ogn_fut, weglide_fut)?;
+
     let flarmnet_records: HashMap<_, _> = flarmnet_file
         .records
         .into_iter()
@@ -46,16 +53,14 @@ async fn main() -> anyhow::Result<()> {
 
     debug!(flarmnet_count = flarmnet_records.len());
 
-    let ogn_ddb_records: HashMap<_, _> = ogn::get_ddb(&client)
-        .await?
+    let ogn_ddb_records: HashMap<_, _> = ogn_ddb_records
         .into_iter()
         .map(|record| (record.device_id.to_lowercase(), record))
         .collect();
 
     debug!(ogn_count = ogn_ddb_records.len());
 
-    let weglide_devices: HashMap<_, _> = weglide::get_devices(&client)
-        .await?
+    let weglide_devices: HashMap<_, _> = weglide_devices
         .into_iter()
         .map(|record| (record.id.to_lowercase(), record))
         .collect();
