@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate tracing;
 
+use reqwest_middleware::ClientBuilder;
+use reqwest_tracing::TracingMiddleware;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufWriter;
@@ -23,7 +25,11 @@ async fn main() -> anyhow::Result<()> {
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    let flarmnet_file = flarmnet::get_flarmnet_file().await?;
+    let client = ClientBuilder::new(reqwest::Client::new())
+        .with(TracingMiddleware)
+        .build();
+
+    let flarmnet_file = flarmnet::get_flarmnet_file(&client).await?;
     let flarmnet_records: HashMap<_, _> = flarmnet_file
         .records
         .into_iter()
@@ -32,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
 
     debug!(flarmnet_count = flarmnet_records.len());
 
-    let ogn_ddb_records: HashMap<_, _> = ogn::get_ddb()
+    let ogn_ddb_records: HashMap<_, _> = ogn::get_ddb(&client)
         .await?
         .into_iter()
         .map(|record| (record.device_id.to_lowercase(), record))
@@ -40,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
 
     debug!(ogn_count = ogn_ddb_records.len());
 
-    let weglide_devices: HashMap<_, _> = weglide::get_devices()
+    let weglide_devices: HashMap<_, _> = weglide::get_devices(&client)
         .await?
         .into_iter()
         .map(|record| (record.id.to_lowercase(), record))

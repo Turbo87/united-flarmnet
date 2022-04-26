@@ -1,14 +1,15 @@
 use crate::cache::Cache;
 use flarmnet::xcsoar::DecodedFile;
+use reqwest_middleware::ClientWithMiddleware;
 use std::time::Duration;
 
 static FLARMNET_CACHE_DURATION: Duration = Duration::from_secs(60 * 60);
 
-#[instrument]
-pub async fn get_flarmnet_file() -> anyhow::Result<flarmnet::File> {
+#[instrument(skip(client))]
+pub async fn get_flarmnet_file(client: &ClientWithMiddleware) -> anyhow::Result<flarmnet::File> {
     let cache = Cache::new("flarmnet.fln", FLARMNET_CACHE_DURATION);
     if cache.needs_update() {
-        let content = download_flarmnet_file().await?;
+        let content = download_flarmnet_file(client).await?;
         cache.save(&content)?;
     }
 
@@ -18,10 +19,13 @@ pub async fn get_flarmnet_file() -> anyhow::Result<flarmnet::File> {
     Ok(to_file(decoded_file))
 }
 
-#[instrument]
-async fn download_flarmnet_file() -> anyhow::Result<String> {
+#[instrument(skip(client))]
+async fn download_flarmnet_file(client: &ClientWithMiddleware) -> anyhow::Result<String> {
     info!("downloading FlarmNet file…");
-    let response = reqwest::get("https://www.flarmnet.org/static/files/wfn/data.fln").await?;
+    let response = client
+        .get("https://www.flarmnet.org/static/files/wfn/data.fln")
+        .send()
+        .await?;
     Ok(response.text().await?)
 }
 
