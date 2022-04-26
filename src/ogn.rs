@@ -64,6 +64,6 @@ pub fn get_ddb() -> anyhow::Result<Vec<Device>> {
 #[instrument]
 fn download_ogn_ddb_data() -> anyhow::Result<String> {
     info!("downloading OGN DDB…");
-    let response = ureq::get("http://ddb.glidernet.org/download/?j=1&t=1").call()?;
-    Ok(response.into_string()?)
+    let response = reqwest::blocking::get("http://ddb.glidernet.org/download/?j=1&t=1")?;
+    Ok(response.text()?)
 }
