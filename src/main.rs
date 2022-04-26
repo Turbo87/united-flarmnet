@@ -6,7 +6,7 @@ use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -45,77 +45,45 @@ async fn main() -> anyhow::Result<()> {
     let (flarmnet_file, ogn_ddb_records, weglide_devices) =
         try_join!(flarmnet_fut, ogn_fut, weglide_fut)?;
 
-    let flarmnet_records: HashMap<_, _> = flarmnet_file
+    let mut flarmnet_map: HashMap<_, _> = flarmnet_file
         .records
         .into_iter()
         .map(|record| (record.flarm_id.to_lowercase(), record))
         .collect();
 
-    debug!(flarmnet_count = flarmnet_records.len());
+    debug!(flarmnet_count = flarmnet_map.len());
 
-    let ogn_ddb_records: HashMap<_, _> = ogn_ddb_records
+    let mut ogn_map: HashMap<_, _> = ogn_ddb_records
         .into_iter()
         .map(|record| (record.device_id.to_lowercase(), record))
         .collect();
 
-    debug!(ogn_count = ogn_ddb_records.len());
+    debug!(ogn_count = ogn_map.len());
 
-    let weglide_devices: HashMap<_, _> = weglide_devices
+    let mut weglide_map: HashMap<_, _> = weglide_devices
         .into_iter()
         .map(|record| (record.id.to_lowercase(), record))
         .collect();
 
-    debug!(weglide_count = weglide_devices.len());
+    debug!(weglide_count = weglide_map.len());
 
     info!("merging datasets…");
-    let mut merged: HashMap<_, _> = ogn_ddb_records
+
+    let mut ids: HashSet<_> = flarmnet_map.keys().cloned().collect();
+    ids.extend(ogn_map.keys().cloned());
+    ids.extend(weglide_map.keys().cloned());
+
+    let mut merged: Vec<_> = ids
         .into_iter()
-        .map(|(id, it)| (id, it.into_flarmnet_record()))
+        .filter_map(|id| {
+            let flarmnet_record = flarmnet_map.remove(&id);
+            let ogn_device = ogn_map.remove(&id);
+            let weglide_device = weglide_map.remove(&id);
+            merge(flarmnet_record, ogn_device, weglide_device)
+        })
         .collect();
 
-    for (id, record) in flarmnet_records {
-        let existing_record = merged.get_mut(&id);
-        if let Some(existing_record) = existing_record {
-            if existing_record.call_sign == record.call_sign {
-                existing_record.pilot_name = record.pilot_name;
-                existing_record.airfield = record.airfield;
-                existing_record.frequency = record.frequency;
-
-                if existing_record.registration.is_empty() {
-                    existing_record.registration = record.registration;
-                }
-
-                if existing_record.plane_type.is_empty() {
-                    existing_record.plane_type = record.plane_type;
-                }
-            }
-        } else {
-            merged.insert(id, record);
-        }
-    }
-
-    for (id, device) in weglide_devices {
-        let existing_record = merged.get_mut(&id);
-        if let Some(existing_record) = existing_record {
-            if existing_record.call_sign == device.competition_id.unwrap_or_default() {
-                existing_record.pilot_name = device.user.name;
-
-                if existing_record.registration.is_empty() {
-                    existing_record.registration = device.name.unwrap_or_default();
-                }
-
-                if existing_record.plane_type.is_empty() {
-                    existing_record.plane_type =
-                        device.aircraft.map(|it| it.name).unwrap_or_default();
-                }
-            }
-        } else {
-            merged.insert(id, device.into_flarmnet_record());
-        }
-    }
-
     info!("sorting result…");
-    let mut merged: Vec<_> = merged.into_iter().map(|(_, record)| record).collect();
     merged.sort_unstable_by_key(|a| u32::from_str_radix(&a.flarm_id, 16).unwrap());
 
     merged.iter_mut().for_each(|record| {
@@ -149,4 +117,54 @@ async fn main() -> anyhow::Result<()> {
     lx_writer.write(&lx_file)?;
 
     Ok(())
+}
+
+fn merge(
+    flarmnet_record: Option<::flarmnet::Record>,
+    ogn_device: Option<ogn::Device>,
+    weglide_device: Option<weglide::Device>,
+) -> Option<::flarmnet::Record> {
+    let mut merged = ogn_device.map(|it| it.into_flarmnet_record());
+
+    merged = match (merged, flarmnet_record) {
+        (None, None) => None,
+        (Some(merged), None) => Some(merged),
+        (None, Some(flarmnet_record)) => Some(flarmnet_record),
+        (Some(mut merged), Some(flarmnet_record)) => {
+            if merged.call_sign == flarmnet_record.call_sign {
+                merged.pilot_name = flarmnet_record.pilot_name;
+                merged.airfield = flarmnet_record.airfield;
+                merged.frequency = flarmnet_record.frequency;
+
+                if merged.registration.is_empty() {
+                    merged.registration = flarmnet_record.registration;
+                }
+
+                if merged.plane_type.is_empty() {
+                    merged.plane_type = flarmnet_record.plane_type;
+                }
+            }
+            Some(merged)
+        }
+    };
+
+    match (merged, weglide_device) {
+        (None, None) => None,
+        (Some(merged), None) => Some(merged),
+        (None, Some(weglide_device)) => Some(weglide_device.into_flarmnet_record()),
+        (Some(mut merged), Some(device)) => {
+            if merged.call_sign == device.competition_id.unwrap_or_default() {
+                merged.pilot_name = device.user.name;
+
+                if merged.registration.is_empty() {
+                    merged.registration = device.name.unwrap_or_default();
+                }
+
+                if merged.plane_type.is_empty() {
+                    merged.plane_type = device.aircraft.map(|it| it.name).unwrap_or_default();
+                }
+            }
+            Some(merged)
+        }
+    }
 }
