@@ -14,13 +14,13 @@ fn sanitize_for_xcsoar(value: &str) -> String {
 
 fn sanitize(value: &str) -> String {
     let string = value
-        .replace("ä", "ae")
-        .replace("ö", "oe")
-        .replace("ü", "ue")
-        .replace("Ä", "Ae")
-        .replace("Ö", "Oe")
-        .replace("Ü", "Ue")
-        .replace("ß", "ss");
+        .replace('ä', "ae")
+        .replace('ö', "oe")
+        .replace('ü', "ue")
+        .replace('Ä', "Ae")
+        .replace('Ö', "Oe")
+        .replace('Ü', "Ue")
+        .replace('ß', "ss");
     deunicode::deunicode(&string)
 }
 
