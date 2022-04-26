@@ -16,13 +16,14 @@ mod ogn;
 mod sanitize;
 mod weglide;
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     Subscriber::builder()
         .pretty()
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 
-    let flarmnet_file = flarmnet::get_flarmnet_file()?;
+    let flarmnet_file = flarmnet::get_flarmnet_file().await?;
     let flarmnet_records: HashMap<_, _> = flarmnet_file
         .records
         .into_iter()
@@ -31,14 +32,16 @@ fn main() -> anyhow::Result<()> {
 
     debug!(flarmnet_count = flarmnet_records.len());
 
-    let ogn_ddb_records: HashMap<_, _> = ogn::get_ddb()?
+    let ogn_ddb_records: HashMap<_, _> = ogn::get_ddb()
+        .await?
         .into_iter()
         .map(|record| (record.device_id.to_lowercase(), record))
         .collect();
 
     debug!(ogn_count = ogn_ddb_records.len());
 
-    let weglide_devices: HashMap<_, _> = weglide::get_devices()?
+    let weglide_devices: HashMap<_, _> = weglide::get_devices()
+        .await?
         .into_iter()
         .map(|record| (record.id.to_lowercase(), record))
         .collect();
