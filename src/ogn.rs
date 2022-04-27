@@ -46,17 +46,12 @@ impl Device {
 
 #[instrument(skip(client))]
 pub async fn get_ddb(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
-    let content = download_ogn_ddb_data(client).await?;
-    let ogn_ddb: DeviceDatabase = serde_json::from_str(&content)?;
-    Ok(ogn_ddb.devices)
-}
-
-#[instrument(skip(client))]
-async fn download_ogn_ddb_data(client: &ClientWithMiddleware) -> anyhow::Result<String> {
-    info!("downloading OGN DDB…");
+    info!("Downloading OGN DDB…");
     let response = client
         .get("http://ddb.glidernet.org/download/?j=1&t=1")
         .send()
         .await?;
-    Ok(response.text().await?)
+    let content = response.text().await?;
+    let ogn_ddb: DeviceDatabase = serde_json::from_str(&content)?;
+    Ok(ogn_ddb.devices)
 }
