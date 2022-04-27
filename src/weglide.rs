@@ -48,21 +48,17 @@ impl Device {
 
 #[instrument(skip(client))]
 pub async fn get_devices(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
-    let devices = download_devices(client).await?;
+    info!("Downloading WeGlide device data…");
+    let response = client
+        .get("https://api.weglide.org/v1/user/device")
+        .send()
+        .await?;
+
+    let devices: Vec<Device> = response.json().await?;
     debug!(devices = devices.len());
 
     let current_devices: Vec<_> = devices.into_iter().filter(|it| it.is_current()).collect();
     debug!(current_devices = current_devices.len());
 
     Ok(current_devices)
-}
-
-#[instrument(skip(client))]
-async fn download_devices(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
-    info!("Downloading WeGlide device data…");
-    let response = client
-        .get("https://api.weglide.org/v1/user/device")
-        .send()
-        .await?;
-    Ok(response.json().await?)
 }
