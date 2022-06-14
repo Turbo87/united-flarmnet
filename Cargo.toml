@@ -16,7 +16,7 @@ deunicode = "1.3.1"
 encoding_rs = "0.8.31"
 flarmnet = "0.4.0"
 http-cache-reqwest = "0.4.5"
-reqwest = { version = "0.11.10", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.11.11", features = ["json", "rustls-tls"], default-features = false }
 reqwest-middleware = "0.1.6"
 reqwest-retry = "0.1.5"
 reqwest-tracing = "0.2.2"
