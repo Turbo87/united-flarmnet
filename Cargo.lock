@@ -651,9 +651,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache"
-version = "0.6.5"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4454aac149336202b5fc06a4451ffd0f032419ae3b3e98212cf38a47b29c548"
+checksum = "48834b3de285fb372571cfd0cb875a8d274ca18414fe7e91e2102919203c8789"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -670,9 +670,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache-reqwest"
-version = "0.4.5"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c5229affa77eaf70b605f56fe5b66a3e1f5f2c9df063e94acdc82f321319667"
+checksum = "d1dac55f0fc31c4ee72789a5dc489d9ea3348f2babdd79a7c0f7b2d1b34c7a38"
 dependencies = [
  "anyhow",
  "async-trait",
