@@ -21,7 +21,7 @@ jobs:
       - run: strip target/x86_64-unknown-linux-gnu/release/united-flarmnet
 
       - run: mkdir dist && cp target/x86_64-unknown-linux-gnu/release/united-flarmnet dist
-      - uses: JamesIves/github-pages-deploy-action@v4.3.4
+      - uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
           branch: gh-pages
           folder: dist
