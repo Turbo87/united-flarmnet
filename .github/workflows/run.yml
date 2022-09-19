@@ -1,25 +1,49 @@
 name: Run
 
-on: workflow_dispatch
+on:
+  # run if manually triggered
+  workflow_dispatch:
+
+  # run if something on the `main` branch changes
+  push:
+    branches:
+      - main
+
+  # run every hour at XX:42
+  schedule:
+    - cron: "42 * * * *"
+
+# needed for https://github.com/JamesIves/github-pages-deploy-action
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   run:
     name: Run
-    concurrency: ci-${{ github.ref }}
+    concurrency: run-${{ github.ref }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: 'gh-pages'
+      - uses: actions/checkout@v3.0.0
+      - uses: Swatinem/rust-cache@v2.0.0
 
-      - run: ./united-flarmnet
+      - run: cargo build --release
+
+      - run: target/release/united-flarmnet
         env:
           RUST_LOG: info
 
-      - uses: actions/upload-artifact@v3.1.0
+      - name: Prepare dist folder
+        run: |
+          mkdir dist
+          mv united.fln dist/
+          mv united-lx.fln dist/
+
+      - uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
-          name: united-flarmnet
-          path: |
-            united.fln
-            united-lx.fln
+          clean: false
+          folder: dist
+          single-commit: true
