@@ -13,17 +13,19 @@ on:
   schedule:
     - cron: "42 * * * *"
 
-# needed for https://github.com/JamesIves/github-pages-deploy-action
 permissions:
-  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: run
+  cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   run:
-    name: Run
-    concurrency: run-${{ github.ref }}
     runs-on: ubuntu-latest
 
     steps:
@@ -42,8 +44,18 @@ jobs:
           mv united.fln dist/
           mv united-lx.fln dist/
 
-      - uses: JamesIves/github-pages-deploy-action@v4.4.0
+      - uses: actions/upload-pages-artifact@v1
         with:
-          clean: false
-          folder: dist
-          single-commit: true
+          path: ./dist
+
+  deploy:
+    needs: run
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v1
