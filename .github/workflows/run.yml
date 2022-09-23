@@ -41,6 +41,7 @@ jobs:
       - name: Prepare dist folder
         run: |
           mkdir dist
+          cp -R webpage/* dist/
           mv united.fln dist/
           mv united-lx.fln dist/
 
