@@ -80,11 +80,29 @@
           background: #fff;
           transition: none;
       }
+
+      .last-update {
+          margin-top: 2rem;
+          font-size: 2rem;
+      }
   </style>
 </head>
 <body>
   <h1>United FlarmNet</h1>
   <p>A FlarmNet file that combines <a href="https://www.flarmnet.org/">FlarmNet</a>, <a href="http://ddb.glidernet.org">OGN</a> and <a href="https://www.weglide.org/">WeGlide</a> data</p>
   <a class="button" href="united.fln">Download</a>
+  <p class="last-update">Last update: <time datetime="{{time}}">{{time}}</time></p>
+  <script>
+      try {
+          let $time = document.querySelector('time');
+          let time = new Date($time.textContent);
+          $time.textContent = time.toLocaleString(undefined, {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+          })
+      } catch {
+          // 🤷‍
+      }
+  </script>
 </body>
 </html>

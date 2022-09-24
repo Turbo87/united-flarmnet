@@ -38,12 +38,7 @@ jobs:
         env:
           RUST_LOG: info
 
-      - name: Prepare dist folder
-        run: |
-          mkdir dist
-          cp -R webpage/* dist/
-          mv united.fln dist/
-          mv united-lx.fln dist/
+      - run: node build-webpage.mjs
 
       - uses: actions/upload-pages-artifact@v1
         with:
