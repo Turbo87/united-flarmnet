@@ -711,9 +711,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48834b3de285fb372571cfd0cb875a8d274ca18414fe7e91e2102919203c8789"
+checksum = "13d17ffcf6f5bc04467b04bf665d823055d61c75148372a45df7319290a37d59"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -730,9 +730,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache-reqwest"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1dac55f0fc31c4ee72789a5dc489d9ea3348f2babdd79a7c0f7b2d1b34c7a38"
+checksum = "4782d2f7e6c9df2672907be7c1fa717cb69f78fd68a52e8c1c671a6513187026"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -957,9 +957,9 @@ dependencies = [
 
 [[package]]
 name = "miette"
-version = "4.7.1"
+version = "5.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c90329e44f9208b55f45711f9558cec15d7ef8295cc65ecd6d4188ae8edc58c"
+checksum = "7a24c4b4063c21e037dffb4de388ee85e400bff299803aba9513d9c52de8116b"
 dependencies = [
  "miette-derive",
  "once_cell",
@@ -969,9 +969,9 @@ dependencies = [
 
 [[package]]
 name = "miette-derive"
-version = "4.7.1"
+version = "5.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b5bc45b761bcf1b5e6e6c4128cd93b84c218721a8d9b894aa0aff4ed180174c"
+checksum = "827d18edee5d43dc309eb0ac565f2b8e2fdc89b986b2d929e924a0f6e7f23835"
 dependencies = [
  "proc-macro2",
  "quote",
