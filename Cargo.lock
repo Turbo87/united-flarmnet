@@ -720,9 +720,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13d17ffcf6f5bc04467b04bf665d823055d61c75148372a45df7319290a37d59"
+checksum = "eeb1456e593b7972039e70113f31bd33ebbe97d0b6e269c35449525ca0284a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -739,9 +739,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache-reqwest"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4782d2f7e6c9df2672907be7c1fa717cb69f78fd68a52e8c1c671a6513187026"
+checksum = "2f7c0d9fa1b970ae42aeb7a4b957fa055caf03acd37b2178941dd258e68a8e49"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1272,13 +1272,12 @@ dependencies = [
 
 [[package]]
 name = "reqwest-middleware"
-version = "0.1.6"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69539cea4148dce683bec9dc95be3f0397a9bb2c248a49c8296a9d21659a8cdd"
+checksum = "4a1c03e9011a8c59716ad13115550469e081e2e9892656b0ba6a47c907921894"
 dependencies = [
  "anyhow",
  "async-trait",
- "futures",
  "http",
  "reqwest",
  "serde",
@@ -1288,9 +1287,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest-retry"
-version = "0.1.5"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce246a729eaa6aff5e215aee42845bf5fed9893cc6cd51aeeb712f34e04dd9f3"
+checksum = "e29d842a94e8ab9b581fd3b906053872aef2fb3e474cbd88712047895d2deee4"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1308,15 +1307,14 @@ dependencies = [
 
 [[package]]
 name = "reqwest-tracing"
-version = "0.3.1"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64977f9a47fa7768cc88751e29026e569730ac1667c2eaeaac04b32624849fbe"
+checksum = "b739d87a6b2cf4743968ad2b4cef648fbe0204c19999509824425babb2097bce"
 dependencies = [
  "async-trait",
  "reqwest",
  "reqwest-middleware",
  "task-local-extensions",
- "tokio",
  "tracing",
 ]
 
