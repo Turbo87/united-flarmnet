@@ -720,9 +720,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13d17ffcf6f5bc04467b04bf665d823055d61c75148372a45df7319290a37d59"
+checksum = "eeb1456e593b7972039e70113f31bd33ebbe97d0b6e269c35449525ca0284a3b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -739,9 +739,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache-reqwest"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4782d2f7e6c9df2672907be7c1fa717cb69f78fd68a52e8c1c671a6513187026"
+checksum = "2f7c0d9fa1b970ae42aeb7a4b957fa055caf03acd37b2178941dd258e68a8e49"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -749,7 +749,7 @@ dependencies = [
  "http-cache",
  "http-cache-semantics",
  "reqwest",
- "reqwest-middleware",
+ "reqwest-middleware 0.2.0",
  "serde",
  "task-local-extensions",
  "url",
@@ -1287,6 +1287,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "reqwest-middleware"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a1c03e9011a8c59716ad13115550469e081e2e9892656b0ba6a47c907921894"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "http",
+ "reqwest",
+ "serde",
+ "task-local-extensions",
+ "thiserror",
+]
+
+[[package]]
 name = "reqwest-retry"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1299,7 +1314,7 @@ dependencies = [
  "http",
  "hyper",
  "reqwest",
- "reqwest-middleware",
+ "reqwest-middleware 0.1.6",
  "retry-policies",
  "task-local-extensions",
  "tokio",
@@ -1314,7 +1329,7 @@ checksum = "64977f9a47fa7768cc88751e29026e569730ac1667c2eaeaac04b32624849fbe"
 dependencies = [
  "async-trait",
  "reqwest",
- "reqwest-middleware",
+ "reqwest-middleware 0.1.6",
  "task-local-extensions",
  "tokio",
  "tracing",
@@ -1859,7 +1874,7 @@ dependencies = [
  "flarmnet",
  "http-cache-reqwest",
  "reqwest",
- "reqwest-middleware",
+ "reqwest-middleware 0.1.6",
  "reqwest-retry",
  "reqwest-tracing",
  "serde",
