@@ -19,7 +19,7 @@ http-cache-reqwest = "0.8.0"
 reqwest = { version = "0.11.18", features = ["json", "rustls-tls"], default-features = false }
 reqwest-middleware = "0.2.2"
 reqwest-retry = "0.2.2"
-reqwest-tracing = "0.4.4"
+reqwest-tracing = "0.4.5"
 serde = { version = "1.0.164", features = ["derive"] }
 serde_json = "1.0.97"
 time = { version = "0.3.22", features = ["serde-well-known"] }
