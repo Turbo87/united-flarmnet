@@ -2,7 +2,7 @@
 extern crate tracing;
 
 use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
-use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache};
+use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
@@ -34,7 +34,7 @@ async fn main() -> anyhow::Result<()> {
         .with(Cache(HttpCache {
             mode: CacheMode::Default,
             manager: CACacheManager::default(),
-            options: None,
+            options: HttpCacheOptions::default(),
         }))
         .build();
 
