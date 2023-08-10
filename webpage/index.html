@@ -81,11 +81,16 @@
           transition: none;
       }
 
+      .buttons {
+          margin: 4rem auto 0;
+          width: min(390px, 90vw);
+      }
+
       .button {
+          display: block;
           font-weight: 600;
           font-size: 2.4rem;
-          margin: 6rem auto 0;
-          padding: 1.2rem 10rem;
+          padding: .9rem 1rem;
           background: #efd400;
           text-align: center;
           color: #321774;
@@ -100,6 +105,10 @@
           transition: none;
       }
 
+      .button + .button {
+          margin-top: 2rem;
+      }
+
       .last-update {
           margin-top: 2rem;
           font-size: 2rem;
@@ -109,7 +118,10 @@
 <body>
   <h1>United FlarmNet</h1>
   <p>A FlarmNet file that combines <a href="https://www.flarmnet.org/">FlarmNet</a>, <a href="http://ddb.glidernet.org">OGN</a> and <a href="https://www.weglide.org/">WeGlide</a> data</p>
-  <a class="button" href="united.fln">Download</a>
+  <div class="buttons">
+    <a class="button" href="united.fln">Download for XCSoar</a>
+    <a class="button" href="united-lx.fln">Download for LX</a>
+  </div>
   <p class="last-update">Last update: <time datetime="{{time}}">{{time}}</time></p>
   <script>
       try {
