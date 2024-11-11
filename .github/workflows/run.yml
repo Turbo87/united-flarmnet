@@ -29,8 +29,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3.5.3
-      - uses: Swatinem/rust-cache@v2.6.2
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: Swatinem/rust-cache@e207df5d269b42b69c8bc5101da26f7d31feddb4 # v2.6.2
 
       - run: cargo build --release
 
@@ -40,7 +40,7 @@ jobs:
 
       - run: node build-webpage.mjs
 
-      - uses: actions/upload-pages-artifact@v2.0.0
+      - uses: actions/upload-pages-artifact@a753861a5debcf57bf8b404356158c8e1e33150c # v2.0.0
         with:
           path: ./dist
 
