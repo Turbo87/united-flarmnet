@@ -1,23 +1,15 @@
 {
     "extends": [
-        "config:base",
-        ":automergePatch",
-        ":dependencyDashboard",
+        "config:best-practices",
+        ":pinAllExceptPeerDependencies",
         ":maintainLockFilesWeekly",
         ":prConcurrentLimitNone",
         ":prHourlyLimitNone",
         ":semanticCommitsDisabled",
+        ":automergePatch",
+        ":automergeStableNonMajor",
+        ":automergeLinters",
+        ":automergeTesters",
         "github>Turbo87/renovate-config//rust/updateToolchain"
-    ],
-    "packageRules": [
-        {
-            "matchCurrentVersion": ">= 1.0.0",
-            "updateTypes": ["minor"],
-            "automerge": true
-        },
-        {
-            "depTypeList": ["devDependencies"],
-            "automerge": true
-        }
     ]
 }
