@@ -40,7 +40,7 @@ jobs:
 
       - run: node build-webpage.mjs
 
-      - uses: actions/upload-pages-artifact@v2
+      - uses: actions/upload-pages-artifact@v2.0.0
         with:
           path: ./dist
 
@@ -54,4 +54,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v2.0.0
