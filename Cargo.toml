@@ -11,7 +11,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "=1.0.94"
+anyhow = "=1.0.95"
 deunicode = "=1.6.0"
 encoding_rs = "=0.8.35"
 flarmnet = "=0.5.0"
