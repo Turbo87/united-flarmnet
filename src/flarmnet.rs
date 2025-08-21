@@ -5,7 +5,7 @@ use reqwest_middleware::ClientWithMiddleware;
 pub async fn get_flarmnet_file(client: &ClientWithMiddleware) -> anyhow::Result<flarmnet::File> {
     info!("Downloading FlarmNet file…");
     let response = client
-        .get("https://www.flarmnet.org/static/files/wfn/data.fln")
+        .get("https://www.flarmnet.org/files/data.fln")
         .send()
         .await?;
     let response = response.error_for_status()?;
