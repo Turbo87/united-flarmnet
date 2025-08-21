@@ -8,6 +8,7 @@ pub async fn get_flarmnet_file(client: &ClientWithMiddleware) -> anyhow::Result<
         .get("https://www.flarmnet.org/static/files/wfn/data.fln")
         .send()
         .await?;
+    let response = response.error_for_status()?;
     let content = response.text().await?;
     let decoded_file = flarmnet::xcsoar::decode_file(&content)?;
     Ok(to_file(decoded_file))

@@ -51,6 +51,7 @@ pub async fn get_ddb(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device
         .get("http://ddb.glidernet.org/download/?j=1&t=1")
         .send()
         .await?;
+    let response = response.error_for_status()?;
     let ogn_ddb: DeviceDatabase = response.json().await?;
     Ok(ogn_ddb.devices)
 }

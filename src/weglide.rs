@@ -54,6 +54,8 @@ pub async fn get_devices(client: &ClientWithMiddleware) -> anyhow::Result<Vec<De
         .send()
         .await?;
 
+    let response = response.error_for_status()?;
+
     let devices: Vec<Device> = response.json().await?;
     debug!(devices = devices.len());
 
