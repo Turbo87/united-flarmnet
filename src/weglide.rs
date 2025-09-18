@@ -50,7 +50,7 @@ impl Device {
 pub async fn get_devices(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
     info!("Downloading WeGlide device data…");
     let response = client
-        .get("https://api.weglide.org/v1/user/device")
+        .get("https://api.weglide.org/v1/device/connected")
         .send()
         .await?;
 
