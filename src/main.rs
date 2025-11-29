@@ -44,8 +44,15 @@ async fn main() -> anyhow::Result<()> {
     let ogn_fut = ogn::get_ddb(&client);
     let weglide_fut = weglide::get_devices(&client);
 
-    let (flarmnet_file, ogn_ddb_records, weglide_devices) =
-        try_join!(flarmnet_fut, ogn_fut, weglide_fut)?;
+    let (flarmnet_file, ogn_ddb_records) = try_join!(flarmnet_fut, ogn_fut)?;
+
+    let weglide_devices = match weglide_fut.await {
+        Ok(devices) => devices,
+        Err(err) => {
+            warn!("failed to fetch weglide devices: {err}");
+            Vec::new()
+        }
+    };
 
     let mut flarmnet_map: HashMap<_, _> = flarmnet_file
         .records
