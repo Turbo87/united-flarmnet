@@ -28,7 +28,9 @@ async fn main() -> anyhow::Result<()> {
 
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(5);
 
-    let client = ClientBuilder::new(reqwest::Client::new())
+    let user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+    let client = reqwest::Client::builder().user_agent(&user_agent).build()?;
+    let client = ClientBuilder::new(client)
         .with(TracingMiddleware::default())
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .with(Cache(HttpCache {
