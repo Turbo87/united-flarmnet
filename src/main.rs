@@ -130,7 +130,10 @@ async fn main() -> anyhow::Result<()> {
     info!("writing united.json…");
     let json_path = PathBuf::from("united.json");
     let json_file = File::create(json_path)?;
-    let json_records: Vec<_> = merged.iter().map(SerializableRecord::from).collect();
+    let json_records: Vec<_> = merged
+        .iter()
+        .filter_map(SerializableRecord::from_record)
+        .collect();
     serde_json::to_writer(BufWriter::new(json_file), &json_records)?;
 
     Ok(())
