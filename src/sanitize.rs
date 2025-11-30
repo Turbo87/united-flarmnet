@@ -1,5 +1,14 @@
 use flarmnet::Record;
 
+pub fn has_data(record: &Record) -> bool {
+    !(record.pilot_name.is_empty()
+        && record.airfield.is_empty()
+        && record.plane_type.is_empty()
+        && record.registration.is_empty()
+        && record.call_sign.is_empty()
+        && record.frequency.is_empty())
+}
+
 fn sanitize_for_lx(value: &str) -> String {
     sanitize(value)
 }
@@ -24,8 +33,12 @@ fn sanitize(value: &str) -> String {
     deunicode::deunicode(&string)
 }
 
-pub fn sanitize_record_for_lx(record: &Record) -> Record {
-    Record {
+pub fn sanitize_record_for_lx(record: &Record) -> Option<Record> {
+    if record.flarm_id.is_empty() || !has_data(record) {
+        return None;
+    }
+
+    Some(Record {
         flarm_id: sanitize_for_lx(&record.flarm_id),
         pilot_name: sanitize_for_lx(&record.pilot_name),
         airfield: sanitize_for_lx(&record.airfield),
@@ -33,11 +46,15 @@ pub fn sanitize_record_for_lx(record: &Record) -> Record {
         registration: sanitize_for_lx(&record.registration),
         call_sign: sanitize_for_lx(&record.call_sign),
         frequency: sanitize_for_lx(&record.frequency),
-    }
+    })
 }
 
-pub fn sanitize_record_for_xcsoar(record: &Record) -> Record {
-    Record {
+pub fn sanitize_record_for_xcsoar(record: &Record) -> Option<Record> {
+    if record.flarm_id.is_empty() || !has_data(record) {
+        return None;
+    }
+
+    Some(Record {
         flarm_id: sanitize_for_xcsoar(&record.flarm_id),
         pilot_name: sanitize_for_xcsoar(&record.pilot_name),
         airfield: sanitize_for_xcsoar(&record.airfield),
@@ -45,7 +62,7 @@ pub fn sanitize_record_for_xcsoar(record: &Record) -> Record {
         registration: sanitize_for_xcsoar(&record.registration),
         call_sign: sanitize_for_xcsoar(&record.call_sign),
         frequency: sanitize_for_xcsoar(&record.frequency),
-    }
+    })
 }
 
 #[cfg(test)]

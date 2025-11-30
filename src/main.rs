@@ -108,7 +108,10 @@ async fn main() -> anyhow::Result<()> {
     let file = File::create(path)?;
     let mut writer = ::flarmnet::xcsoar::Writer::new(BufWriter::new(file));
 
-    let xcsoar_records = merged.iter().map(sanitize_record_for_xcsoar).collect();
+    let xcsoar_records = merged
+        .iter()
+        .filter_map(sanitize_record_for_xcsoar)
+        .collect();
     let xcsoar_file = ::flarmnet::File {
         version: flarmnet_file.version,
         records: xcsoar_records,
@@ -120,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
     let lx_file = File::create(lx_path)?;
     let mut lx_writer = ::flarmnet::lx::Writer::new(BufWriter::new(lx_file));
 
-    let lx_records = merged.iter().map(sanitize_record_for_lx).collect();
+    let lx_records = merged.iter().filter_map(sanitize_record_for_lx).collect();
     let lx_file = ::flarmnet::File {
         version: flarmnet_file.version,
         records: lx_records,

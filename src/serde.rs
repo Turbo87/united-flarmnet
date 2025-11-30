@@ -1,3 +1,4 @@
+use crate::sanitize::has_data;
 use flarmnet::Record;
 use serde::Serialize;
 
@@ -24,18 +25,7 @@ pub struct SerializableRecord<'a> {
 
 impl<'a> SerializableRecord<'a> {
     pub fn from_record(record: &'a Record) -> Option<Self> {
-        if record.flarm_id.is_empty() {
-            return None;
-        }
-
-        let has_no_data = record.pilot_name.is_empty()
-            && record.airfield.is_empty()
-            && record.plane_type.is_empty()
-            && record.registration.is_empty()
-            && record.call_sign.is_empty()
-            && record.frequency.is_empty();
-
-        if has_no_data {
+        if record.flarm_id.is_empty() || !has_data(record) {
             return None;
         }
 
