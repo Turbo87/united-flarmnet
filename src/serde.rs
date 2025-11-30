@@ -1,6 +1,10 @@
 use flarmnet::Record;
 use serde::Serialize;
 
+fn is_empty_or_unknown(s: &str) -> bool {
+    s.is_empty() || s == "Unknown"
+}
+
 #[derive(Serialize)]
 pub struct SerializableRecord<'a> {
     flarm_id: &'a str,
@@ -8,7 +12,7 @@ pub struct SerializableRecord<'a> {
     pilot_name: &'a str,
     #[serde(skip_serializing_if = "str::is_empty")]
     airfield: &'a str,
-    #[serde(skip_serializing_if = "str::is_empty")]
+    #[serde(skip_serializing_if = "is_empty_or_unknown")]
     plane_type: &'a str,
     #[serde(skip_serializing_if = "str::is_empty")]
     registration: &'a str,
@@ -82,7 +86,7 @@ mod tests {
             flarm_id: "ABCDEF".to_string(),
             pilot_name: "".to_string(),
             airfield: "".to_string(),
-            plane_type: "ASW 28".to_string(),
+            plane_type: "Unknown".to_string(),
             registration: "D-1234".to_string(),
             call_sign: "".to_string(),
             frequency: "".to_string(),
@@ -91,7 +95,6 @@ mod tests {
         insta::assert_json_snapshot!(SerializableRecord::from_record(&record), @r#"
         {
           "flarm_id": "ABCDEF",
-          "plane_type": "ASW 28",
           "registration": "D-1234"
         }
         "#);
