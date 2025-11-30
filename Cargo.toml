@@ -26,3 +26,6 @@ time = { version = "=0.3.44", features = ["serde-well-known"] }
 tokio = { version = "=1.48.0", features = ["macros", "rt-multi-thread"] }
 tracing = "=0.1.41"
 tracing-subscriber = { version = "=0.3.20", features = ["env-filter"] }
+
+[dev-dependencies]
+insta = { version = "=1.43.1", features = ["json"] }

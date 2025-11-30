@@ -2,6 +2,7 @@
 extern crate tracing;
 
 use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
+use crate::serde::SerializableRecord;
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -17,6 +18,7 @@ use tracing_subscriber::EnvFilter;
 mod flarmnet;
 mod ogn;
 mod sanitize;
+mod serde;
 mod weglide;
 
 #[tokio::main]
@@ -124,6 +126,12 @@ async fn main() -> anyhow::Result<()> {
         records: lx_records,
     };
     lx_writer.write(&lx_file)?;
+
+    info!("writing united.json…");
+    let json_path = PathBuf::from("united.json");
+    let json_file = File::create(json_path)?;
+    let json_records: Vec<_> = merged.iter().map(SerializableRecord::from).collect();
+    serde_json::to_writer(BufWriter::new(json_file), &json_records)?;
 
     Ok(())
 }
