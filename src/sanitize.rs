@@ -49,6 +49,14 @@ pub fn sanitize_record_for_lx(record: &Record) -> Option<Record> {
     })
 }
 
+pub fn sanitize_record_for_tdb(record: &Record) -> Option<Record> {
+    if record.flarm_id.is_empty() || !has_data(record) {
+        return None;
+    }
+
+    Some(record.clone())
+}
+
 pub fn sanitize_record_for_xcsoar(record: &Record) -> Option<Record> {
     if record.flarm_id.is_empty() || !has_data(record) {
         return None;
