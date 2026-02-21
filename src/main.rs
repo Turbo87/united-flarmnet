@@ -1,7 +1,9 @@
 #[macro_use]
 extern crate tracing;
 
-use crate::sanitize::{sanitize_record_for_lx, sanitize_record_for_xcsoar};
+use crate::sanitize::{
+    sanitize_record_for_lx, sanitize_record_for_tdb, sanitize_record_for_xcsoar,
+};
 use crate::serde::SerializableRecord;
 use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
 use reqwest_middleware::ClientBuilder;
@@ -129,6 +131,18 @@ async fn main() -> anyhow::Result<()> {
         records: lx_records,
     };
     lx_writer.write(&lx_file)?;
+
+    info!("writing united.tdb…");
+    let tdb_path = PathBuf::from("united.tdb");
+    let tdb_file = File::create(tdb_path)?;
+    let mut tdb_writer = ::flarmnet::tdb::Writer::new(BufWriter::new(tdb_file));
+
+    let tdb_records = merged.iter().filter_map(sanitize_record_for_tdb).collect();
+    let tdb_file = ::flarmnet::File {
+        version: flarmnet_file.version,
+        records: tdb_records,
+    };
+    tdb_writer.write(&tdb_file)?;
 
     info!("writing united.json…");
     let json_path = PathBuf::from("united.json");
