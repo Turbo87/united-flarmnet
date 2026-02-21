@@ -12,6 +12,7 @@ async function run () {
 
     await copyFile('united.fln', 'dist/united.fln');
     await copyFile('united.json', 'dist/united.json');
+    await copyFile('united.tdb', 'dist/united.tdb');
     await copyFile('united-lx.fln', 'dist/united-lx.fln');
 }
 
