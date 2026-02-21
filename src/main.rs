@@ -132,8 +132,8 @@ async fn main() -> anyhow::Result<()> {
     };
     lx_writer.write(&lx_file)?;
 
-    info!("writing united.tdb…");
-    let tdb_path = PathBuf::from("united.tdb");
+    info!("writing flarmnet.tdb…");
+    let tdb_path = PathBuf::from("flarmnet.tdb");
     let tdb_file = File::create(tdb_path)?;
     let mut tdb_writer = ::flarmnet::tdb::Writer::new(BufWriter::new(tdb_file));
 
