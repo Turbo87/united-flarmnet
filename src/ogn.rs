@@ -1,5 +1,8 @@
+use crate::download;
 use reqwest_middleware::ClientWithMiddleware;
 use serde::Deserialize;
+
+const DDB_URL: &str = "http://ddb.glidernet.org/download/?j=1&t=1";
 
 #[derive(Debug, Deserialize)]
 struct DeviceDatabase {
@@ -47,11 +50,7 @@ impl Device {
 #[instrument(skip(client))]
 pub async fn get_ddb(client: &ClientWithMiddleware) -> anyhow::Result<Vec<Device>> {
     info!("Downloading OGN DDB…");
-    let response = client
-        .get("http://ddb.glidernet.org/download/?j=1&t=1")
-        .send()
-        .await?;
-    let response = response.error_for_status()?;
-    let ogn_ddb: DeviceDatabase = response.json().await?;
+    let contents = download::get_with_cache_fallback(client, "OGN DDB", DDB_URL).await?;
+    let ogn_ddb: DeviceDatabase = serde_json::from_slice(&contents)?;
     Ok(ogn_ddb.devices)
 }

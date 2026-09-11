@@ -1885,6 +1885,7 @@ name = "united-flarmnet"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytes",
  "deunicode",
  "encoding_rs",
  "flarmnet",
@@ -1896,6 +1897,7 @@ dependencies = [
  "reqwest-tracing",
  "serde",
  "serde_json",
+ "tempfile",
  "time",
  "tokio",
  "tracing",
