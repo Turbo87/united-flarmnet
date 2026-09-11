@@ -11,5 +11,19 @@
         ":automergeLinters",
         ":automergeTesters",
         "github>Turbo87/renovate-config//rust/updateToolchain"
+    ],
+    "packageRules": [
+        {
+            "groupName": "reqwest packages",
+            "matchDatasources": ["crate"],
+            "matchPackageNames": [
+                "http-cache-reqwest",
+                "reqwest",
+                "reqwest-middleware",
+                "reqwest-retry",
+                "reqwest-tracing"
+            ],
+            "separateMajorMinor": false
+        }
     ]
 }

@@ -1,5 +1,6 @@
 /dist
 /http-cacache
+/http-cache.redb
 /target
 /united.fln
 /united.json

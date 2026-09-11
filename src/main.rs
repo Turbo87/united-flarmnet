@@ -5,7 +5,7 @@ use crate::sanitize::{
     sanitize_record_for_lx, sanitize_record_for_tdb, sanitize_record_for_xcsoar,
 };
 use crate::serde::SerializableRecord;
-use http_cache_reqwest::{CACacheManager, Cache, CacheMode, HttpCache, HttpCacheOptions};
+use http_cache_reqwest::{Cache, CacheMode, HttpCache, HttpCacheOptions, RedbManager};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
@@ -34,12 +34,13 @@ async fn main() -> anyhow::Result<()> {
 
     let user_agent = format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
     let client = reqwest::Client::builder().user_agent(&user_agent).build()?;
+    let cache_manager = RedbManager::new("./http-cache.redb").map_err(anyhow::Error::from_boxed)?;
     let client = ClientBuilder::new(client)
         .with(TracingMiddleware::default())
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .with(Cache(HttpCache {
             mode: CacheMode::Default,
-            manager: CACacheManager::default(),
+            manager: cache_manager,
             options: HttpCacheOptions::default(),
         }))
         .build();
