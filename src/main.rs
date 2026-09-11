@@ -295,7 +295,7 @@ mod tests {
                     "pilot_name": "Pilot",
                     "registration": "D-1234",
                     "call_sign": "XY",
-                    "image_url": "https://weglidefiles.b-cdn.net/123/profile/photo.jpg",
+                    "image_url": "https://files.weglide.org/123/profile/photo.jpg",
                     "weglide_user_id": 123,
                     "club_name": "Gliding Club",
                     "weglide_club_id": 456,

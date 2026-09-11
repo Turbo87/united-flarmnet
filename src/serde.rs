@@ -51,7 +51,7 @@ impl<'a> SerializableRecord<'a> {
             registration: &record.registration,
             call_sign: &record.call_sign,
             frequency: &record.frequency,
-            image_url: image.map(|image| format!("https://weglidefiles.b-cdn.net/{image}")),
+            image_url: image.map(|image| format!("https://files.weglide.org/{image}")),
             weglide_user_id: user.map(|user| user.id),
             club_name: club
                 .map(|club| club.name.as_str())
