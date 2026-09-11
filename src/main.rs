@@ -5,7 +5,7 @@ use crate::sanitize::{
     sanitize_record_for_lx, sanitize_record_for_tdb, sanitize_record_for_xcsoar,
 };
 use crate::serde::SerializableRecord;
-use http_cache_reqwest::{Cache, CacheMode, HttpCache, HttpCacheOptions, RedbManager};
+use http_cache_reqwest::{Cache, CacheMode, HttpCache, RedbManager};
 use reqwest_middleware::ClientBuilder;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
@@ -13,10 +13,11 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::BufWriter;
 use std::path::PathBuf;
-use tokio::try_join;
+use tokio::join;
 use tracing_subscriber::fmt::Subscriber;
 use tracing_subscriber::EnvFilter;
 
+mod download;
 mod flarmnet;
 mod ogn;
 mod sanitize;
@@ -41,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
         .with(Cache(HttpCache {
             mode: CacheMode::Default,
             manager: cache_manager,
-            options: HttpCacheOptions::default(),
+            options: download::cache_options(),
         }))
         .build();
 
@@ -49,7 +50,9 @@ async fn main() -> anyhow::Result<()> {
     let ogn_fut = ogn::get_ddb(&client);
     let weglide_fut = weglide::get_devices(&client);
 
-    let (flarmnet_file, ogn_ddb_records) = try_join!(flarmnet_fut, ogn_fut)?;
+    let (flarmnet_file, ogn_ddb_records) = join!(flarmnet_fut, ogn_fut);
+    let flarmnet_file = flarmnet_file?;
+    let ogn_ddb_records = optional_ogn_records(ogn_ddb_records);
 
     let weglide_devices = match weglide_fut.await {
         Ok(devices) => devices,
@@ -164,6 +167,13 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+fn optional_ogn_records(result: anyhow::Result<Vec<ogn::Device>>) -> Vec<ogn::Device> {
+    result.unwrap_or_else(|error| {
+        warn!("failed to fetch OGN devices: {error}");
+        Vec::new()
+    })
+}
+
 struct MergedRecord {
     record: ::flarmnet::Record,
     user: Option<weglide::UserRef>,
@@ -233,7 +243,15 @@ fn merge(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::anyhow;
     use serde_json::{json, Value};
+
+    #[test]
+    fn test_missing_ogn_data_is_ignored() {
+        let records = optional_ogn_records(Err(anyhow!("OGN unavailable")));
+
+        assert!(records.is_empty());
+    }
 
     fn export_weglide(user: Value, call_sign: Option<&str>) -> Value {
         let device = serde_json::from_value(json!({
