@@ -97,9 +97,10 @@ async fn main() -> anyhow::Result<()> {
         .collect();
 
     info!("sorting result…");
-    merged.sort_unstable_by_key(|a| u32::from_str_radix(&a.flarm_id, 16).unwrap());
+    merged.sort_unstable_by_key(|a| u32::from_str_radix(&a.record.flarm_id, 16).unwrap());
 
-    merged.iter_mut().for_each(|record| {
+    merged.iter_mut().for_each(|merged| {
+        let record = &mut merged.record;
         if record.airfield == record.registration {
             record.airfield = "".to_string();
         }
@@ -112,7 +113,7 @@ async fn main() -> anyhow::Result<()> {
 
     let xcsoar_records = merged
         .iter()
-        .filter_map(sanitize_record_for_xcsoar)
+        .filter_map(|merged| sanitize_record_for_xcsoar(&merged.record))
         .collect();
     let xcsoar_file = ::flarmnet::File {
         version: flarmnet_file.version,
@@ -125,7 +126,10 @@ async fn main() -> anyhow::Result<()> {
     let lx_file = File::create(lx_path)?;
     let mut lx_writer = ::flarmnet::lx::Writer::new(BufWriter::new(lx_file));
 
-    let lx_records = merged.iter().filter_map(sanitize_record_for_lx).collect();
+    let lx_records = merged
+        .iter()
+        .filter_map(|merged| sanitize_record_for_lx(&merged.record))
+        .collect();
     let lx_file = ::flarmnet::File {
         version: flarmnet_file.version,
         records: lx_records,
@@ -137,7 +141,10 @@ async fn main() -> anyhow::Result<()> {
     let tdb_file = File::create(tdb_path)?;
     let mut tdb_writer = ::flarmnet::tdb::Writer::new(BufWriter::new(tdb_file));
 
-    let tdb_records = merged.iter().filter_map(sanitize_record_for_tdb).collect();
+    let tdb_records = merged
+        .iter()
+        .filter_map(|merged| sanitize_record_for_tdb(&merged.record))
+        .collect();
     let tdb_file = ::flarmnet::File {
         version: flarmnet_file.version,
         records: tdb_records,
@@ -149,18 +156,23 @@ async fn main() -> anyhow::Result<()> {
     let json_file = File::create(json_path)?;
     let json_records: Vec<_> = merged
         .iter()
-        .filter_map(SerializableRecord::from_record)
+        .filter_map(|merged| SerializableRecord::from_record(&merged.record, merged.user.as_ref()))
         .collect();
     serde_json::to_writer(BufWriter::new(json_file), &json_records)?;
 
     Ok(())
 }
 
+struct MergedRecord {
+    record: ::flarmnet::Record,
+    user: Option<weglide::UserRef>,
+}
+
 fn merge(
     flarmnet_record: Option<::flarmnet::Record>,
     ogn_device: Option<ogn::Device>,
     weglide_device: Option<weglide::Device>,
-) -> Option<::flarmnet::Record> {
+) -> Option<MergedRecord> {
     let mut merged = ogn_device.map(|it| it.into_flarmnet_record());
 
     merged = match (merged, flarmnet_record) {
@@ -187,11 +199,19 @@ fn merge(
 
     match (merged, weglide_device) {
         (None, None) => None,
-        (Some(merged), None) => Some(merged),
-        (None, Some(weglide_device)) => Some(weglide_device.into_flarmnet_record()),
+        (Some(record), None) => Some(MergedRecord { record, user: None }),
+        (None, Some(device)) => {
+            let user = Some(device.user.clone());
+            Some(MergedRecord {
+                record: device.into_flarmnet_record(),
+                user,
+            })
+        }
         (Some(mut merged), Some(device)) => {
+            let mut user = None;
             if merged.call_sign == device.competition_id.unwrap_or_default() {
-                merged.pilot_name = device.user.name;
+                merged.pilot_name = device.user.name.clone();
+                user = Some(device.user);
 
                 if merged.registration.is_empty() {
                     merged.registration = device.name.unwrap_or_default();
@@ -201,7 +221,113 @@ fn merge(
                     merged.plane_type = device.aircraft.map(|it| it.name).unwrap_or_default();
                 }
             }
-            Some(merged)
+            Some(MergedRecord {
+                record: merged,
+                user,
+            })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{json, Value};
+
+    fn export_weglide(user: Value, call_sign: Option<&str>) -> Value {
+        let device = serde_json::from_value(json!({
+            "id": "ABCDEF",
+            "name": "D-1234",
+            "competition_id": "XY",
+            "until": null,
+            "user": user,
+        }))
+        .unwrap();
+        let record = call_sign.map(|call_sign| ::flarmnet::Record {
+            flarm_id: "ABCDEF".into(),
+            pilot_name: "Existing pilot".into(),
+            airfield: String::new(),
+            plane_type: String::new(),
+            registration: "D-1234".into(),
+            call_sign: call_sign.into(),
+            frequency: String::new(),
+        });
+        let merged = merge(record, None, Some(device)).unwrap();
+        let record = SerializableRecord::from_record(&merged.record, merged.user.as_ref());
+        serde_json::to_value(record).unwrap()
+    }
+
+    #[test]
+    fn test_weglide_profile_fields() {
+        for call_sign in [None, Some("XY")] {
+            let exported = export_weglide(
+                json!({
+                    "id": 123,
+                    "name": "Pilot",
+                    "image": "123/profile/photo.jpg",
+                    "club": { "id": 456, "name": "Gliding Club" },
+                }),
+                call_sign,
+            );
+            assert_eq!(
+                exported,
+                json!({
+                    "flarm_id": "ABCDEF",
+                    "pilot_name": "Pilot",
+                    "registration": "D-1234",
+                    "call_sign": "XY",
+                    "image_url": "https://weglidefiles.b-cdn.net/123/profile/photo.jpg",
+                    "weglide_user_id": 123,
+                    "club_name": "Gliding Club",
+                    "weglide_club_id": 456,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn test_missing_weglide_profile_fields() {
+        for extra in [
+            json!({}),
+            json!({"image": null, "club": null}),
+            json!({"image": ""}),
+        ] {
+            let mut user = json!({ "id": 123, "name": "Pilot" });
+            user.as_object_mut()
+                .unwrap()
+                .extend(extra.as_object().unwrap().clone());
+            assert_eq!(
+                export_weglide(user, None),
+                json!({
+                    "flarm_id": "ABCDEF",
+                    "pilot_name": "Pilot",
+                    "registration": "D-1234",
+                    "call_sign": "XY",
+                    "weglide_user_id": 123,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn test_mismatched_weglide_profile_is_omitted() {
+        let exported = export_weglide(
+            json!({
+                "id": 123,
+                "name": "Pilot",
+                "image": "123/profile/photo.jpg",
+                "club": { "id": 456, "name": "Gliding Club" },
+            }),
+            Some("ZZ"),
+        );
+        assert_eq!(
+            exported,
+            json!({
+                "flarm_id": "ABCDEF",
+                "pilot_name": "Existing pilot",
+                "registration": "D-1234",
+                "call_sign": "ZZ",
+            })
+        );
     }
 }

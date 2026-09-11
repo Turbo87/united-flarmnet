@@ -26,8 +26,16 @@ pub struct AircraftRef {
     pub name: String,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UserRef {
+    pub id: u32,
+    pub name: String,
+    pub image: Option<String>,
+    pub club: Option<ClubRef>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ClubRef {
     pub id: u32,
     pub name: String,
 }
